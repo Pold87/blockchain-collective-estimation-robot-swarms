@@ -253,34 +253,6 @@ void CEnvironmentClassificationLoopFunctions::disconnectAll(vector<int> allRobot
   }
 }
 
-void CEnvironmentClassificationLoopFunctions::registerAllRobots() {
-
-  CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
-  for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
-
-    /* Get handle to e-puck entity and controller */
-    CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
-    EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
-
-    cController.registerRobot();
-
-  }
-}
-
-
-void CEnvironmentClassificationLoopFunctions::UpdateRegistrationAllRobots() {
-
-  CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
-  for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
-
-    /* Get handle to e-puck entity and controller */
-    CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
-    EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
-
-    cController.updateRegistration();
-  }
-}
-
 void CEnvironmentClassificationLoopFunctions::PreinitMiner() {
 
   cout << "Initializing miner" << endl;
@@ -378,7 +350,6 @@ void CEnvironmentClassificationLoopFunctions::InitEthereum() {
   /* Set the address of the deployed contract in each robot */
   setContractAddressAndDistributeEther(contractAddress, minerAddress);
   int l1 = getBlockChainLength(minerId, minerNode, blockchainPath);
-  registerAllRobots();
   int l2;
   do {
     l2 = getBlockChainLength(minerId, minerNode, blockchainPath);
@@ -748,7 +719,7 @@ void CEnvironmentClassificationLoopFunctions::Init(TConfigurationNode& t_node) {
 	everyTicksFile << "clock\trun\texploringWhite\tdiffusingWhite\texploringGreen\tdiffusingGreen\texploringBlack\tdiffusingBlack\tbyzantineExploringWhite\tbyzantineDiffusingWhite\tbyzantineExploringGreen\tbyzantineDiffusingGreen\tbyzantineExploringBlack\tbyzantineDiffusingBlack\t" << std::endl;
 
       }
-
+      
       /* Blockchain Statistics */
       if((!useClassicalApproach) && blockChainFileFlag) {
 
@@ -760,17 +731,17 @@ void CEnvironmentClassificationLoopFunctions::Init(TConfigurationNode& t_node) {
 	blockChainFile.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
 	blockChainFile << "clock";
 
-	m_strOutput = dataDir + passedRadix +"-whitevotes.RUN" + nRuns;
-	blockChainWhiteVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	blockChainWhiteVotes << "clock";
+	// m_strOutput = dataDir + passedRadix +"-whitevotes.RUN" + nRuns;
+	// blockChainWhiteVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
+	// blockChainWhiteVotes << "clock";
 
-	m_strOutput = dataDir + passedRadix +"-blackvotes.RUN" + nRuns;
-	blockChainBlackVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	blockChainBlackVotes << "clock";
+	// m_strOutput = dataDir + passedRadix +"-blackvotes.RUN" + nRuns;
+	// blockChainBlackVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
+	// blockChainBlackVotes << "clock";
 
-	m_strOutput = dataDir + passedRadix +"-last2votes.RUN" + nRuns;
-	blockChainLast2Votes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	blockChainLast2Votes << "clock";
+	// m_strOutput = dataDir + passedRadix +"-last2votes.RUN" + nRuns;
+	// blockChainLast2Votes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
+	// blockChainLast2Votes << "clock";
 
 	/* For all robots */
 
@@ -784,16 +755,16 @@ void CEnvironmentClassificationLoopFunctions::Init(TConfigurationNode& t_node) {
 	  std::string id = cController.GetId();
 
 	  blockChainFile << "\t" << "robot" << id;
-	  blockChainWhiteVotes << "\t" << "robot" << id;
-	  blockChainBlackVotes << "\t" << "robot" << id;
-	  blockChainLast2Votes << "\t" << "robot" << id;
+	  //	  blockChainWhiteVotes << "\t" << "robot" << id;
+	  //	  blockChainBlackVotes << "\t" << "robot" << id;
+	  //	  blockChainLast2Votes << "\t" << "robot" << id;
 
 	}
 
 	blockChainFile << std::endl;
-	blockChainWhiteVotes << std::endl;
-	blockChainBlackVotes << std::endl;
-	blockChainLast2Votes << std::endl;
+	//	blockChainWhiteVotes << std::endl;
+	//	blockChainBlackVotes << std::endl;
+	//	blockChainLast2Votes << std::endl;
 
       }
 
@@ -1024,9 +995,9 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 
 
 	  blockChainFile << (GetSpace().GetSimulationClock()) / 10;
-	  blockChainWhiteVotes << (GetSpace().GetSimulationClock()) / 10;
-	  blockChainBlackVotes << (GetSpace().GetSimulationClock()) / 10;
-	  blockChainLast2Votes << (GetSpace().GetSimulationClock()) / 10;
+	  //	  blockChainWhiteVotes << (GetSpace().GetSimulationClock()) / 10;
+	  //	  blockChainBlackVotes << (GetSpace().GetSimulationClock()) / 10;
+	  //	  blockChainLast2Votes << (GetSpace().GetSimulationClock()) / 10;
 
 
 	  string contractAddressNoSpace = contractAddress;
@@ -1036,6 +1007,7 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 				       contractAddressNoSpace.end());
 
 	  int args[0] = {};
+	  string argsString[0] = {};
 
 	  /* For all robots */
 
@@ -1051,41 +1023,45 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 	    int robotNodeInt = cController.getNodeInt();
 
 	    /* Blockchain height per robot */
-	    if ((!useClassicalApproach) && useMultipleNodes)
-	      blockChainFile << "\t" << getBlockChainLength(robotId, robotNodeInt, blockchainPath);
-	    else
+	    if ((!useClassicalApproach) && useMultipleNodes) {
+	      if (robotId == 2) {
+		string SE = smartContractInterfaceStringCall(robotId, interface, contractAddress, "calcSE", argsString, 0, 0, robotNodeInt, blockchainPath);
+		blockChainFile << "\t" << SE;
+	      }	      
+	    } else {
 	      blockChainFile << "\t" << getBlockChainLength(robotId);
+	    }
 
 	    /* Number of white votes per robot */
 
-	    string numWhite;
-	    if (useMultipleNodes)
-	      numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0,
-						robotNodeInt, blockchainPath);
-	    else
-	      numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0);
+	    // string numWhite;
+	    // if (useMultipleNodes)
+	    //   numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0,
+	    // 					robotNodeInt, blockchainPath);
+	    // else
+	    //   numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0);
 
-	    numWhite.erase(std::remove(numWhite.begin(), numWhite.end(), '\n'), numWhite.end());
+	    // numWhite.erase(std::remove(numWhite.begin(), numWhite.end(), '\n'), numWhite.end());
 
-	    blockChainWhiteVotes << "\t" << numWhite;
+	    // blockChainWhiteVotes << "\t" << numWhite;
 
-	    /* Number of black votes per robot */
-	    string numBlack;
-	    if (useMultipleNodes)
-	      numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0,
-						robotNodeInt, blockchainPath);
-	    else
-	      numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0);
+	    // /* Number of black votes per robot */
+	    // string numBlack;
+	    // if (useMultipleNodes)
+	    //   numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0,
+	    // 					robotNodeInt, blockchainPath);
+	    // else
+	    //   numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0);
 
-	    numBlack.erase(std::remove(numBlack.begin(), numBlack.end(), '\n'), numBlack.end());
-	    blockChainBlackVotes << "\t" << numBlack;
+	    // numBlack.erase(std::remove(numBlack.begin(), numBlack.end(), '\n'), numBlack.end());
+	    // blockChainBlackVotes << "\t" << numBlack;
 
 	  }
 
 	  blockChainFile << std::endl;
-	  blockChainWhiteVotes << std::endl;
-	  blockChainBlackVotes << std::endl;
-	  blockChainLast2Votes << std::endl;
+	  //	  blockChainWhiteVotes << std::endl;
+	  //	  blockChainBlackVotes << std::endl;
+	  //	  blockChainLast2Votes << std::endl;
 
 	}
 
@@ -1188,9 +1164,9 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 	      /* Close blockchain files */
 	      if (blockChainFile.is_open()){
 		blockChainFile.close();
-		blockChainWhiteVotes.close();
-		blockChainBlackVotes.close();
-		blockChainLast2Votes.close();
+		//		blockChainWhiteVotes.close();
+		//		blockChainBlackVotes.close();
+		//		blockChainLast2Votes.close();
 	      }
 	      
 	      /* globalStatFile: write the general statistics, such as counted cells,
@@ -1331,6 +1307,7 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
 				     contractAddressNoSpace.end());
 	
 	int args[0] = {};
+	string argsString[0] = {};
 
 	/* For all robots */
 	
@@ -1348,8 +1325,10 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
 		if (useMultipleNodes) {
 
 		  /* Blockchain height per robot */
-		  blockChainFile << "\t" << getBlockChainLength(robotId, robotNodeInt, blockchainPath);
-
+		  if (robotId == 2) {
+		    string SE = smartContractInterfaceStringCall(robotId, interface, contractAddress, "calcSE", argsString, 0, 0, robotNodeInt, blockchainPath);
+		    blockChainFile << "\t" << SE;
+		  }
 		    } else {
 
 		      /* Blockchain height per robot */

@@ -102,6 +102,8 @@ int getWhiteVotes(int i, int nodeInt, std::string datadirBase);
 int getBlackVotes(int i);
 int getBlackVotes(int i, int nodeInt, std::string datadirBase);
 
+int calcSE(int i, int nodeInt, std::string datadirBase);
+
 // Get last 2 votes
 int getLast2Votes(int i);
 int getLast2Votes(int i, int nodeInt, std::string datadirBase);

@@ -3,11 +3,11 @@ USERNAME=`whoami`
 mailto='volker.strobel87@gmail.com'
 TEMPLATE='experiments/epuck_EC_locale_template.argos'
 OUTFILE="experiments/epuck$1.argos"
-BASEDIR="$HOME/Documents/argdavide/controllers/epuck_environment_classification/"
+BASEDIR="$HOME/Documents/col_estimation/controllers/epuck_environment_classification/"
 BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
-NUMROBOTS=(20) 
+NUMROBOTS=(4) 
 REPETITIONS=1
 DECISIONRULE=$3
 PERCENT_BLACKS=(34)
@@ -17,7 +17,7 @@ MININGDIFF=1000000 #was 1000000 before
 # never go with the difficulty below 131072! (see https://github.com/ethereum/go-ethereum/issues/3590)
 USEMULTIPLENODES=true
 USEBACKGROUNDGETHCALLS=true
-MAPPINGPATH="$HOME/Documents/argdavide/experiments/config$1.txt"
+MAPPINGPATH="$HOME/Documents/col_estimation/experiments/config$1.txt"
 CHANGEDIFFIULTY=""
 NUMRUNS=1
 THREADS=20
@@ -31,7 +31,7 @@ REGENERATEFILE="$(pwd)/regenerate${USEDNODES[0]}.sh"
 # The miner node is the first of the used nodes
 MINERNODE=${USEDNODES[0]}
 USECLASSICALAPPROACH=false
-NUMBYZANTINE=(0 1 2 3 4 5 6 7 8 9)
+NUMBYZANTINE=(0)
 BYZANTINESWARMSTYLE=0
 SUBSWARMCONSENSUS=false # Determines if all N robots have to agree or
 		       # only the beneficial subswarm.

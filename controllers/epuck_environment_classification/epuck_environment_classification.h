@@ -126,16 +126,9 @@ public:
    void Listening();
    void ConnectAndListen();
    void DiffuseInformation();
-   void WaitForDecision();
    void DecisionRule(UInt32 decision_rule);
-   void NotWeightedDirectComparison();
-   void VoterModel();
-   void DirectComparison();
-   void MajorityRule();
    void Move();
    void TurnLeds();
-   UInt32  FindMaxOpinionReceived(UInt32 numberOpinionsReceived[], UInt32 actualOpinion);
-   UInt32  FindMaxOpinionReceivedWithBug(UInt32 numberOpinionsReceived[], UInt32 actualOpinion);
    Real ExponentialFormula(Real mean){
 
 	   CRange<Real> cRange(0.0,1.0);
@@ -204,12 +197,11 @@ public:
    }
    
    void UpdateNeighbors(std::set<int> newNeighbors);
-   void registerRobot(); // Tell the smart contract the robot's public key
-   void updateRegistration(); // Wait for the first event of the smart contract   
 
 private:
 
    void InitGeth(int robotId);
+   void WaitForDecision();
    void readNodeMapping();
    //   void readByzantineMapping();
    void DistributeID();

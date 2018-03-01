@@ -1364,10 +1364,7 @@ int getBlockChainLength(int i, int nodeInt, string datadirBase) {
     istringstream ss(res);
     ss >> blockNumber;
   }
-
-  
   return blockNumber;
-
 }
 
 
@@ -1465,6 +1462,20 @@ int getBlackVotes(int i, int nodeInt, string datadirBase) {
 
   return resInt;
 }
+
+
+// Get standard error of the mean
+int calcSE(int i, int nodeInt, string datadirBase) {
+  string cmd = "calcSE()";
+  string res = exec_geth_cmd(i, cmd, nodeInt, datadirBase);
+  istringstream ss(res);  
+  int resInt;
+  ss >> resInt;  
+
+  return resInt;
+}
+
+
 
 // Get last 2 votes
 int getLast2Votes(int i) {
