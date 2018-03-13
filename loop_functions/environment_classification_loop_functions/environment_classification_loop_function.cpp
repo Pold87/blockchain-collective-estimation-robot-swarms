@@ -495,22 +495,8 @@ bool CEnvironmentClassificationLoopFunctions::InitRobots() {
     opinion.actualOpinion = opinionsToAssign[i];
     i++;
 
-    /* Decide if the robot should be Byzantine */
-    if (remainingByzantineWhites > 0 && opinion.actualOpinion == 1) {
-      cController.setByzantineStyle(byzantineSwarmStyle); // always vote for white
-      //cout << "setting byz style 1" << endl;
-      remainingByzantineWhites--;
-    } else if (remainingByzantineBlacks > 0 && opinion.actualOpinion == 2) {
-      cController.setByzantineStyle(byzantineSwarmStyle); // always vote for white      
-      remainingByzantineBlacks--;
-      //cout << "setting byz style 2" << endl;
-    } else {
-      cController.setByzantineStyle(0); // doe normaal
-      //cout << "setting byz style 0" << endl;
-    }
-
     opinion.countedCellOfActualOpinion = 0;
-    collectedData.count = 1;
+    collectedData.count = 0;
     if(opinion.actualOpinion == 1)
       opinion.actualOpCol = CColor::WHITE;
     if(opinion.actualOpinion == 2)
