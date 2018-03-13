@@ -191,7 +191,7 @@ public:
    }
    
    void UpdateNeighbors(std::set<int> newNeighbors);
-   string getBlockChainSize();
+   std::string getBlockChainSize();
 
 private:
 

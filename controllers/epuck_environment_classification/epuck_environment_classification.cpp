@@ -306,8 +306,10 @@ void EPuck_Environment_Classification::RandomWalk() {
   }
 }
 
-string Epuck_Environment_Classification::getBlockChainSize() {
+string EPuck_Environment_Classification::getBlockChainSize() {
 
+  int robotId = Id2Int(GetId());
+  
   ostringstream fullCommandStream;
   fullCommandStream << "du " << simulationParams.blockchainPath << robotId << "/geth/chaindata/";
   std::string fullCommand = fullCommandStream.str();  
@@ -478,10 +480,6 @@ void EPuck_Environment_Classification::killGethAndRemoveFolders(string bcPath, s
 
 void EPuck_Environment_Classification::fromLoopFunctionResPrepare(){
 
-  IC.receivedOpinion = 100;
-  IC.receivedQuality = 100;
-  IC.senderID = 100;
-
   opinion.countedCellOfActualOpinion = 0;
   opinion.quality = 0;
   collectedData.count = 0;
@@ -490,8 +488,6 @@ void EPuck_Environment_Classification::fromLoopFunctionResPrepare(){
   toSend[0] = Id2Int(GetId());
   m_pcRABA->SetData(toSend);
   m_pcRABS->ClearPackets();
-  receivedOpinions.clear();
-
   TurnLeds();
 
   /* Assign the initial state of the robots: all in exploration state*/
