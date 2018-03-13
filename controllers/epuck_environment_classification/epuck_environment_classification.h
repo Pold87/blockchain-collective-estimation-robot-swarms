@@ -40,12 +40,6 @@ public:
 	     CollectedData();
 	  };
 
-	  struct informationCollected{
-	     UInt8 receivedOpinion;
-	     Real receivedQuality;
-	     UInt8 senderID;
-	  };
-
 	  struct Opinion {
 		 UInt32 actualOpinion;
 	     UInt32 countedCellOfActualOpinion;
@@ -126,7 +120,6 @@ public:
    void Listening();
    void ConnectAndListen();
    void DiffuseInformation();
-   void DecisionRule(UInt32 decision_rule);
    void Move();
    void TurnLeds();
    Real ExponentialFormula(Real mean){
@@ -146,9 +139,6 @@ public:
    }
    inline SimulationState& GetSimulationState(){
       return simulationParams;
-   }
-   inline std::vector<informationCollected>& GetReceivedOpinions() {
-      return receivedOpinions;
    }
    inline Movement & GetMovement() {
       return movement;
@@ -220,8 +210,6 @@ private:
    /* Files */
    std::ofstream epuckFile;
    /* Data structures for collect opinions in diffusing state */
-   std::vector<informationCollected> receivedOpinions;  // Set of information collected in every diffusing states
-   informationCollected IC;
    /* All others used variables */
    SStateData m_sStateData;
    SimulationState simulationParams;

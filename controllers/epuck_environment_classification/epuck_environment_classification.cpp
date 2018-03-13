@@ -1,9 +1,9 @@
 /* Include the controller definit*io*itn */
 #include "epuck_environment_classification.h"
 
-#define ALPHA_CHANNEL		     0
-#define COLOR_STRENGHT           255
-#define N_COL		         	 3
+#define ALPHA_CHANNEL 0
+#define COLOR_STRENGHT 255
+#define N_COL 3
 
 #include <iostream>
 #include <algorithm>
@@ -21,7 +21,6 @@ using namespace std;
 map<int, string> enodes;
 map<int, string> coinbaseAddresses;
 string interface; // Smart contract interface
-SInt32 voteEveryXTicks = 5;
 
 /* Convert a number to a string */
 template <typename T> std::string NumberToString ( T Number )
@@ -43,7 +42,7 @@ EPuck_Environment_Classification::EPuck_Environment_Classification() :
 			  ToRadians(m_cAlpha)) {}
 
 EPuck_Environment_Classification::CollectedData::CollectedData() :
-  count (1) {}
+  count (0) {}
 
 EPuck_Environment_Classification::Opinion::Opinion() :
   countedCellOfActualOpinion (0)  {}
@@ -115,30 +114,15 @@ void EPuck_Environment_Classification::Init(TConfigurationNode& t_node) {
   std::string m_strOutput;
   m_strOutput = GetId();
 
-  /* IC it's an helping variable to read others opinion */
-  IC.receivedOpinion = 5;
-  IC.receivedQuality = 5;
-  IC.senderID = 5;
-
   /* INITIAL QUALITY: has to be estimated in the first exploration state */
   opinion.quality = 0;
-
-  /* Init REB actuators*/
-  CCI_EPuckRangeAndBearingActuator::TData toSend;
-  toSend[0]=5;
-  toSend[1]=5;
-  toSend[2]=5;
-  toSend[3]=5;
-  m_pcRABA->SetData(toSend);
-
+  
   readNodeMapping();
   
   if(simulationParams.percentRed < simulationParams.percentBlue)
     simulationParams.percentRed = simulationParams.percentBlue;
   simulationParams.percentRed = simulationParams.percentRed / 100;
 
-  cout << "Percent red is " << simulationParams.percentRed << endl;
-  cout << "Percent blue is " << simulationParams.percentBlue << endl;
 }
 
 // Decide which robot runs on which cluster node
@@ -231,14 +215,12 @@ void EPuck_Environment_Classification::UpdateNeighbors(set<int> newNeighbors) {
 /***************************************************************************************************************/
 void EPuck_Environment_Classification::ControlStep() {
 
+  ConnectAndListen();
   int robotId = Id2Int(GetId());
 
-  if (!simulationParams.useClassicalApproach) {
-    if (beginning) {
-      start_mining_bg(robotId, 1, nodeInt, simulationParams.blockchainPath);
-      stop_mining_bg(robotId, nodeInt, simulationParams.blockchainPath);
-      beginning = false;
-    }
+  if (beginning) {
+    start_mining_bg(robotId, 1, nodeInt, simulationParams.blockchainPath);
+    beginning = false;
   }
   
   /* Turn leds according with actualOpinion */
@@ -251,22 +233,6 @@ void EPuck_Environment_Classification::ControlStep() {
   switch(m_sStateData.State) {
     
   case SStateData::STATE_EXPLORING: {
-
-    /* For a fully connected network (debugging) */
-    set<int> currentNeighbors;
-    
-    if (!simulationParams.useClassicalApproach) {
-      UpdateNeighbors(currentNeighbors);
-      
-      if (mining) {
-	cout << " STOP MINING -- robot" << robotId << endl;
-	mining = false;
-	if (simulationParams.useMultipleNodes)
-	  stop_mining_bg(robotId, nodeInt, simulationParams.blockchainPath);
-	else
-	  stop_mining(robotId);
-      }
-    }
     Explore();    
     break;
   }
@@ -344,10 +310,7 @@ void EPuck_Environment_Classification::RandomWalk() {
 /***************************************************************************************************************/
 void EPuck_Environment_Classification::Explore() {
 
-  m_pcRABS->ClearPackets();
-  
   int robotId = Id2Int(GetId());
-  //  int nodeInt = robotIdToNode[robotId];
   
   /* remainingExplorationTime it's the variable decremented each control step. 
    * This variable represents the time that a robot must still spend in exploration state.
@@ -368,66 +331,21 @@ void EPuck_Environment_Classification::Explore() {
    *   different params for the random variable;
    */
   else{
-    if (byzantineStyle == 4 || byzantineStyle == 5)
-      opinion.quality = 1.0;
-    else
-      opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));
-    
+    opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));
     
     opinion.countedCellOfActualOpinion = 0;
-    receivedOpinions.clear();
-    collectedData.count = 1;
+    collectedData.count = 0;
     m_sStateData.State = SStateData::STATE_DIFFUSING;
     
-    if (!simulationParams.useClassicalApproach) {
-      uint opinionInt = (uint) (opinion.quality * 100); // Convert opinion quality to a value between 0 and 100
-      string args[0] = {}; 
-
-      string voteResult;
-
-      if (simulationParams.useMultipleNodes){
-
-	int args3[1] = {bwh.blockNumber};
-	smartContractInterfaceStringBg(robotId, interface, contractAddress, "vote", args, 0, opinionInt, nodeInt, simulationParams.blockchainPath);
-      } 
-    }
+    uint opinionInt = (uint) (opinion.quality * 10000000); // Convert opinion quality to a value between 0 and 10000000
+    string args[0] = {};
+    smartContractInterfaceStringBg(robotId, interface, contractAddress, "vote", args, 0, opinionInt, nodeInt, simulationParams.blockchainPath);
     
-    /* Assigning a new exploration time, for the next exploration state */
+    /* Assigning a new exploration and time, for the next exploration state */
     
     m_sStateData.remainingExplorationTime = Ceil(m_pcRNG->Exponential((Real)simulationParams.sigma));
     m_sStateData.explorDurationTime = m_sStateData.remainingExplorationTime;
 
-    /*
-     * Assigning a new diffusing time for the incoming diffusing time, if the decision rule is the not-weighted
-     * direct comparison then the next diffusing time is weighted with the ideal quality of the best opinion
-     */
-
-    if (simulationParams.decision_rule == 0 || simulationParams.decision_rule == 2) {
-
-      m_sStateData.remainingDiffusingTime = (m_pcRNG->Exponential(((Real)simulationParams.g)*((Real)simulationParams.percentRed)))+30;
-
-    } else if (simulationParams.decision_rule == 1 || simulationParams.decision_rule == 3) {
-
-      m_sStateData.remainingDiffusingTime = Ceil(m_pcRNG->Exponential((Real)simulationParams.g*(Real)opinion.quality)+30);
-
-    } else {
-
-      /* Non-implemented decision rule */
-      cout << "Unknown decision rule" << endl;
-
-      if (!simulationParams.useClassicalApproach) {
-	if (simulationParams.useMultipleNodes) {
-	  //killGethAndRemoveFolders(simulationParams.blockchainPath, simulationParams.regenerateFile)
-;	  cout << "epuck_environment_classification error !!" << endl;
-	  throw;
-	}
-      }
-      
-      throw;
-
-    }
-
-    m_sStateData.diffusingDurationTime = m_sStateData.remainingDiffusingTime;
   }  
 }
 
@@ -446,121 +364,29 @@ void EPuck_Environment_Classification::WaitForDecision() {
   if (eventResult.find("Error") == string::npos) {
 
 	vector<string> splitResult = split(eventResult, ' ');    
-	std::string sNewOpinion = splitResult[2];
-	std::string sBlock = splitResult[1];
-	std::string sBlockhash = splitResult[0];      
-	cout << "sNewOpinion is " << sNewOpinion << endl;
-	cout << "sBlock is " << sBlock << endl;
-	cout << "sBlockhash is " << sBlockhash << endl;
-	
+	std::string consensusReached = splitResult[0];      
+	cout << "consensusReach is " << consensusReached << endl;
 
-	if (bwh.blockNumber != atoi(sBlock.c_str())) {
-      
-	  int newOpinion = atoi(sNewOpinion.c_str());
-	  bwh.blockNumber = atoi(sBlock.c_str());      
-	  bwh.hash = "\"" + sBlockhash + "\"";
-	  opinion.actualOpinion = newOpinion;
-
-	  if (byzantineStyle > 0) {
-	
-	    switch(byzantineStyle) {
-	    case 1 : opinion.actualOpinion = 1;
-	      break;
-	    case 2 : opinion.actualOpinion = 2;
-	      break;
-	    case 5 : opinion.actualOpinion = 2;
-	      cout << "I am Byzantine id:" << robotId << "keeping opinion 2" << endl;
-	      break;
-	    default:
-	      cout << "Wrong byzantine style" << endl;
-	      throw;
-	    }    
-	}
-      receivedDecision = true;
-	}
-      }
+	if (consensousReached == "2")	
+	  receivedDecision = true;
+  }
   threadCurrentlyRunning = false;
 }
 
 void EPuck_Environment_Classification::ConnectAndListen() {
 
-	/* Every received data is stored in IC variable (helping
-	 * var). Each IC variable will be inserted in receivedOpinions
-	 * array if has not been sensed yet and it's not a 0,0,0 one.
-	 * It will be used to choose the next opinion, basing on
-	 * decision rules. After a decision has been taken this array
-	 * will be emptied for the next diffusing state. */
-	
-	/* TODO: check!! Davide has this function in the next condition,
-	   that is, (if( m_sStateData.remainingDiffusingTime < 30 )) */
   int robotId = Id2Int(GetId());
   set<int> currentNeighbors;
 	
   const CCI_EPuckRangeAndBearingSensor::TPackets& tPackets = m_pcRABS->GetPackets();
 	
   for(size_t i = 0; i < tPackets.size() ; ++i) {
-	  
-    bool saved = false;   // saved = variable to not save opinions twice: if saved == true -> don't save the datas
-    
-    /*
-     * IC = Helping variable for sensed opinions, if the received opinion is 5 then not save it (5 is the default value
-     * of the RAB actuators, if you receive 5 then the sender robot wasn't ready to send a new opinion
-     */
-    IC.receivedOpinion = tPackets[i]->Data[0];
-    if(IC.receivedOpinion == 5)
-      saved = true;
-    
-    IC.senderID = tPackets[i]->Data[3];
-	  
-    
-    /* Loop for sense quality value: quality has been sent using 3 cells of RAB datas,
-       so here it will converted in a Real number */
-    IC.receivedQuality=0;
-    for ( UInt32 j = 1; j<3 ; ++j)
-      IC.receivedQuality = IC.receivedQuality*100 + tPackets[i]->Data[j];
-    IC.receivedQuality = (Real) IC.receivedQuality / 10000;
-    
-    /* If the incoming value has already been listened then not save it */
-    for(UInt32 j = 0; j < receivedOpinions.size(); ++j)
-      if(receivedOpinions[j].senderID == IC.senderID)
-	saved = true;
-    
-    /*
-     * Don't want to save 0,0,0 values (values sent casually before to add 555 value, probably no
-     * more used now.
-     */
-    
-    /* Save value if it has not been already saved and it's not 5,5,5 or 0,0,0 value  */
-    if(!saved) {
-      if (simulationParams.useClassicalApproach)
-	receivedOpinions.push_back(IC);
-      else /* Update Ethereum neighbors */
-	currentNeighbors.insert(IC.senderID);   	      
-    }    
-  }
+    currentNeighbors.insert(tPackets[i]->Data[3]);   	      
+  }    
 
-
-  /* Listen to other opinions */
-  /* In my implementation, robots in the diffusing state are
-     connected with each other; since the blockchain is a
-     bilateral protocol and one cannot only receive but not send
-     or vice versa */
-  
-  if (!simulationParams.useClassicalApproach) {
-    UpdateNeighbors(currentNeighbors);
-	  
-
-    //double before_mining = measure_time(begin_diffuse, "Update neighbors finished");
-	
-    if (!mining) {
-      cout << " START MINING -- robot" << robotId << endl;
-      mining = true;
-      if (simulationParams.useMultipleNodes)
-	start_mining_bg(robotId, 1, nodeInt, simulationParams.blockchainPath);
-      else
-	start_mining(robotId, 1);
-    }    	  
-  }
+  /* Update Neighbors */
+  UpdateNeighbors(currentNeighbors);
+  m_pcRABS->ClearPackets();
 }
 
 
@@ -579,89 +405,25 @@ void EPuck_Environment_Classification::DiffuseInformation() {
       CCI_EPuckRangeAndBearingActuator::TData toSend;
 
       /* First Byte used for the opinion of the robot */
-      toSend[0] = opinion.actualOpinion;
-
-      /* Second and Third Byte used for the quality of the robots */
-      Real p = opinion.quality;
-      UInt8 t;
-      for (UInt32 i = 0; i < 2; ++i)
-	{
-	  p = p*100;
-	  t = (UInt8)p;
-	  p = p - t;
-	  toSend[i+1] = t;
-	}
-
-      /* Send ID: ID sent on the 4th Byte. An univoque transformation of the
-       * string id is calculated by using the ASCII charachter of the string,
-       * and then it will be sent to the other robots. (ep45 -> 45 is sent).
-       */
-      std::string id = GetId();
-      UInt32 idConversion = id[2]-'0';
-      if(id[3]!='\0')
-	idConversion = (idConversion*10) + (id[3]-'0');
-
+      toSend[0] = 0;
+      toSend[1] = 0;
+      toSend[2] = 0;
+      UInt32 idConversion = Id2Int(GetId());
       toSend[3] = idConversion;
-
       /* Send datas and decrement the diffusing time left */
       m_pcRABA->SetData(toSend);
-
 }
 
 void EPuck_Environment_Classification::Diffusing() {
 
-  m_sStateData.remainingDiffusingTime--;
 
-  if (m_sStateData.remainingDiffusingTime < 30 ) {
-    ConnectAndListen();
-  }
+  /* TODO: Query consensous reached */
   
-  /* remainingDiffusingTime>0 means that is still time to perform diffusing state */
-  if (m_sStateData.remainingDiffusingTime > 0) {
-
-    DiffuseInformation();
-    
-    /* In the 3 lasts seconds (30 ticks) the robot starts listening to other opinions
-     * and diffusing its own opinion, quality and ID */
-    
-
-  } else if (m_sStateData.remainingDiffusingTime < 0) {
-
-    /* Reset exponential random diffusing time */
-    UInt32 write = m_sStateData.diffusingDurationTime;
-    m_sStateData.remainingDiffusingTime = Ceil(m_pcRNG->Exponential((Real)simulationParams.g*(Real)opinion.quality)+30);
-    m_sStateData.diffusingDurationTime = m_sStateData.remainingDiffusingTime;
-    
-    /* Direct comparison without weighted diffusing time */
-    if(simulationParams.decision_rule == 0 || simulationParams.decision_rule == 2)
-      m_sStateData.remainingDiffusingTime = (m_pcRNG->Exponential(((Real)simulationParams.g)*((Real)simulationParams.percentRed)))+30;
-    
     /* Change to EXPLORING state and choose another opinion with decision rules */
     m_sStateData.State = SStateData::STATE_EXPLORING;
     
     /* After decision has been taken, sensed values are deleted */
-    receivedOpinions.clear();
-    
-    CCI_EPuckRangeAndBearingActuator::TData toSend;
-    toSend[0]=5;
-    toSend[1]=5;
-    toSend[2]=5;
-    toSend[3]=5;
-    m_pcRABA->SetData(toSend);
-    
-  }
-}
-
-/* DECISION RULE */
-void EPuck_Environment_Classification::DecisionRule(UInt32 decision_rule) {
-
-  int robotId = Id2Int(GetId());
-  uint opinionInt = (uint) (opinion.quality * 100);
-  int args[3] = {(int) decision_rule, (int) opinion.actualOpinion, (int) opinionInt};
-  int emptyArgs[0] = {};
-  string sOpinionBlocknumberBlockhash;
-  if (simulationParams.useMultipleNodes) {
-    smartContractInterfaceBg(robotId, interface, contractAddress, "applyStrategy", args, 3, 0, nodeInt, simulationParams.blockchainPath);
+    receivedOpinions.clear();    
   }
 }
 
@@ -730,22 +492,19 @@ void EPuck_Environment_Classification::killGethAndRemoveFolders(string bcPath, s
 
 void EPuck_Environment_Classification::fromLoopFunctionResPrepare(){
 
-  
-  cout << "Called fromLoopFunctionRes" << endl;
-  
-  IC.receivedOpinion = 5;
-  IC.receivedQuality = 5;
-  IC.senderID = 5;
+  IC.receivedOpinion = 100;
+  IC.receivedQuality = 100;
+  IC.senderID = 100;
 
   opinion.countedCellOfActualOpinion = 0;
   opinion.quality = 0;
-  collectedData.count = 1;
+  collectedData.count = 0;
 
   CCI_EPuckRangeAndBearingActuator::TData toSend;
-  toSend[0]=5;
-  toSend[1]=5;
-  toSend[2]=5;
-  toSend[3]=5;
+  toSend[0] = 100;
+  toSend[1] = 100;
+  toSend[2] = 100;
+  toSend[3] = Id2Int(GetId());
   m_pcRABA->SetData(toSend);
   m_pcRABS->ClearPackets();
   receivedOpinions.clear();
@@ -759,43 +518,23 @@ void EPuck_Environment_Classification::fromLoopFunctionResPrepare(){
   m_sStateData.remainingExplorationTime = (m_pcRNG->Exponential((Real)simulationParams.sigma));
   m_sStateData.explorDurationTime = m_sStateData.remainingExplorationTime;
 
-  cout << "ID Raw is: " << GetId() << endl;
   int robotId = Id2Int(GetId());
 
   beginning = true;
   
   /* Ethereum */
-  if (!simulationParams.useClassicalApproach) {
-    nodeInt = robotIdToNode[robotId];       
-    interface = readStringFromFile(simulationParams.baseDir + simulationParams.interfacePath);
+  nodeInt = robotIdToNode[robotId];       
+  interface = readStringFromFile(simulationParams.baseDir + simulationParams.interfacePath);
     
-    /* Find out on which cluster node this robot's geth process should be executed */
-    if (simulationParams.useMultipleNodes) {
-
-      ostringstream genesisPathStream;
-      genesisPathStream << "~/genesis/genesis" << simulationParams.basePort << ".json";
-      string genesisPath = genesisPathStream.str();
-
-      geth_init(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath, genesisPath);
-      start_geth(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
-      createAccount(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
-
-      coinbaseAddresses[robotId] = getCoinbase(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
-      address = coinbaseAddresses[robotId];    
-      
-      prepare_for_new_genesis(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);      
-
-      
-    } else {
-      geth_init(robotId);
-      start_geth(robotId);
-      createAccount(robotId);   
-      enodes[robotId] = get_enode(robotId);
-      coinbaseAddresses[robotId] = getCoinbase(robotId);
-      address = coinbaseAddresses[robotId];    
-      unlockAccount(robotId, "test");
-    }
-  }
+  ostringstream genesisPathStream;
+  genesisPathStream << "~/genesis/genesis" << simulationParams.basePort << ".json";
+  string genesisPath = genesisPathStream.str();
+  geth_init(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath, genesisPath);
+  start_geth(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
+  createAccount(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
+  coinbaseAddresses[robotId] = getCoinbase(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
+  address = coinbaseAddresses[robotId];          
+  prepare_for_new_genesis(robotId, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);      
 }
 
 void EPuck_Environment_Classification::fromLoopFunctionResStart(){

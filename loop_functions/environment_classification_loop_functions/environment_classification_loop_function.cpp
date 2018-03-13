@@ -213,28 +213,6 @@ void CEnvironmentClassificationLoopFunctions::connectMinerToEveryone() {
 
 }
 
-/* TODO: this function does not work with multiple nodes since the ssh
-   call is sent from the miner and not from the robot*/
-void CEnvironmentClassificationLoopFunctions::connectMore(vector<int> allRobotIds) {
-  for (std::vector<int>::iterator it1 = allRobotIds.begin() ; it1 != allRobotIds.end() - 1; ++it1) {
-
-    std::vector<int>::iterator it2 = it1 + 1;
-
-    cout << "it1 is" << *it1 << " and it2 is " << *it2 << endl;
-    if (useMultipleNodes) {
-
-      string e = get_enode(*it2, minerNode, basePort, blockchainPath);
-      add_peer(*it1, e, minerNode, basePort, blockchainPath);
-    } else {
-      string e = get_enode(*it2);
-      add_peer(*it1, e);
-    }
-  }
-}
-
-
-
-
 void CEnvironmentClassificationLoopFunctions::disconnectAll(vector<int> allRobotIds) {
 
   cout << "Disconnecting everyone" << endl;
@@ -496,30 +474,6 @@ bool CEnvironmentClassificationLoopFunctions::InitRobots() {
     opinionsToAssign[j] = temp;
   }
 
-
-  /* Initialize Byzantine robots */
-  int remainingByzantineBlacks;
-  int remainingByzantineWhites;
-
-  /* TODO: could be changed to switch case */
-
-  if (byzantineSwarmStyle == 0) { // No Byzantine robots
-    remainingByzantineWhites = 0;
-    remainingByzantineBlacks = 0;
-  } else if (byzantineSwarmStyle == 1) { 
-    remainingByzantineWhites = numByzantine;
-    remainingByzantineBlacks = 0;
-  } else if (byzantineSwarmStyle == 2  || byzantineSwarmStyle == 5) { 
-    remainingByzantineWhites = 0;
-    remainingByzantineBlacks = numByzantine;
-  } else if (byzantineSwarmStyle == 3) { // White + black Byzantine robots
-    remainingByzantineWhites = numByzantine / 2;
-    remainingByzantineBlacks = numByzantine / 2;
-  } else {
-    cout << "Unknown Byzantine style";
-    errorOccurred = true;
-    IsExperimentFinished();
-  }
 
   /* Variable i is used to check the vector with the mixed opinion to assign a new opinion to every robots*/
   int i = 0;
@@ -1266,17 +1220,21 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
   }
   
   /* Check if a consensous has been reached (i.e.: if every robots agree with a colour) */
-  for ( UInt32 c = 0; c < N_COL ; c++ ) {
 
-    if (subswarmConsensus) {
-      /* If the non-Byzantine robots agree on a color */
-      if ( (robotsInExplorationCounter[c] + robotsInDiffusionCounter[c]) == (n_robots - numByzantine) )
-	consensousReached = c;
-    } else {
-      if ( (robotsInExplorationCounter[c] + robotsInDiffusionCounter[c] + byzantineRobotsInExplorationCounter[c] + byzantineRobotsInDiffusionCounter[c]) == n_robots )
-	consensousReached = c;
-    }
+  /* TODO */
+
+  bool totalConsensusReached = true; 
+  for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
+    /* Get handle to e-puck entity and controller */
+    CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
+    
+    EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
+    
+    
+    
   }
+  
+  
   
   /* EVERYTICKSFILE: Write this statistics only if the file is open and it's the right timeStep (multiple of timeStep) */
   if ( ! (GetSpace().GetSimulationClock() % timeStep) ) {
