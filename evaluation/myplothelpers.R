@@ -62,45 +62,169 @@ dev.off()
 }
 
 
-plot.exit.prob.gg <- function(df, xlab, ylab, out.name, report.dir) {
+
+plot.exit.prob.gg.facet <- function(df, xlab, ylab, out.name, report.dir) {
 
     print(df)
     df[, 'strat.names'] <- as.factor(df[, 'strat.names'])
-    p <- ggplot(df, aes(x=difficulty, y=E.Ns, group=strat.names)) +
-        geom_line(aes(colour = strat.names), size=1.1) +
-        geom_point(aes(colour = strat.names, shape = strat.names), size=3) +
+    df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
+    p <- ggplot(transform(df, strat.names=factor(strat.names, level=c("DMVD", "DMMD", "DC"))), aes(x=difficulty, y=E.Ns, group=strat.names)) +
+        facet_wrap(~strat.names) +
+        geom_bar(aes(fill = strat.names, color=strat.names), stat="identity", width = 0.5) +
         theme_classic() +
-        theme(axis.text=element_text(size=17, colour="gray25"),
-              axis.title=element_text(size=17, colour="gray25"),
-              #axis.title.y = element_text(angle=0, margin = margin(r = -80), vjust=1.01),
+        theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
-              axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        coord_cartesian(xlim=c(min(df$difficulty), max(df$difficulty))) + 
-
-    #+ xlim(c(, max(difficulty)))
-
-    base_breaks_x(seq(34 / (100 - 34), 48 / (100 - 48), length.out = 8)) + 
-                                        #    base_breaks_y(seq(0.0, 1, 0.1)) +
-            base_breaks_x(c(0.52, 0.72, 0.92)) +
+        #coord_cartesian(xlim=c(min(df$difficulty), max(df$difficulty))) + 
+                                        #base_breaks_x(seq(0.5, 1.0, 0.10)) +
+                                        #base_breaks_x(seq(0.5, 1.0, 0.10)) +
+        #base_breaks_x_discrete(c(0.52, 0.56, 0.61, 0.67, 0.72, 0.79, 0.85, 0.92)) +
+        base_breaks_y(seq(0.0, 1, 0.1))
         
-    expand_limits(x = 1.05)
+    #expand_limits(x = 1.05)
 
-    p <- direct.label(p, list(dl.trans(x=x+0.2, y=y),
-                              list("angled.boxes", cex=1.0)))
-
-    ## Code to turn off clipping
-    ##gt1 <- ggplotGrob(p)
-    ##gt1$layout$clip[gt1$layout$name == "panel"] <- "off"
-    ##grid.draw(gt1)
-        
-    ##p <- direct.label(p, "last.qp")
     print(paste0(report.dir, out.name))
-    ggsave(paste0(report.dir, out.name))
+    ggsave(paste0(report.dir, out.name), width=7, height=4)
+}
+
+plot.exit.prob.gg1 <- function(df, xlab, ylab, out.name, report.dir) {
+
+    p <- ggplot(df, aes(x=actual, y=consWhite)) +
+        geom_bar(stat="identity", width = 0.015) +
+        theme_classic() +
+        theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_x(seq(0.34, 0.48, 0.02)) +
+        base_breaks_y(seq(0.0, 1, 0.1))
+        
+    ggsave(out.name, width=7, height=4)
+}
+
+
+plot.abs.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
+
+    p <- ggplot(df, aes(x=actual, y=absError)) +
+        geom_bar(stat="identity", width = 0.015) +
+        theme_classic() +
+        theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_x(seq(0.34, 0.48, 0.02)) +
+        base_breaks_y(seq(0.0, 0.02, 0.005))
+        
+    ggsave(out.name, width=7, height=4)
+}
+
+
+plot.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
+    p <- ggplot(df, aes(x=actual, y=predicted)) +
+                                        #        geom_point() +
+        geom_boxplot(aes(group = actual)) +
+        geom_abline(lty = 2) + 
+         theme_classic() +
+         theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0.30, 0.50, 0.02)) +
+        base_breaks_x(seq(0.30, 0.50, 0.02)) 
+        
+    print(paste0(report.dir, out.name))
+    ggsave(out.name, width=7, height=4)    
+}
+
+plot.blockchain.size.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=actual, y=blockchain_size_kB)) +
+                                        #        geom_point() +
+        geom_boxplot(aes(group = actual)) +
+         theme_classic() +
+         theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0, 5000, 500)) +
+        base_breaks_x(seq(0.30, 0.50, 0.02)) 
+        
+    print(paste0(report.dir, out.name))
+    ggsave(out.name, width=7, height=4)    
+}
+
+
+
+plot.cons.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
+    p <- ggplot(df, aes(x=actual, y=clock)) +
+                                        #        geom_point() +
+        geom_boxplot(aes(group = actual)) +
+         theme_classic() +
+         theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0, 600, 100)) +
+        base_breaks_x(seq(0.34, 0.48, 0.02)) 
+        
+    print(paste0(report.dir, out.name))
+    ggsave(out.name, width=7, height=4)    
 }
 
 

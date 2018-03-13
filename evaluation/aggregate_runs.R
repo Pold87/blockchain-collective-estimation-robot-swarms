@@ -1,39 +1,26 @@
 source("myplothelpers.R")
 
-## For paper:
-## The good runs are 25-10-2017 and 28-10-2017 for the blockchain approach
-## For the classical approach, the first runs included the buggy majority voting
-## "24-10-2017" is also good but only contains 7, 8, and 9 Byzantine robots
-num.byzantines = 0:9
+## How to use this script:
+##
+
+
+## The latest folder is:
+## 
+
 difficulties <- c(34, 36, 38, 40, 42, 44, 46, 48)
 style <- "blockchain"
-##style <- "classical"
-nodes <- 0:12
-##data.base <- "/home/volker/localargdavide/data/"
+nodes <- 0:1
 
-do.experiment1 <- FALSE
-do.experiment2 <- TRUE
+do.experiment1 <- TRUE
 
-dates.bc.exp1 <- c("15-11-2017", "14-11-2017", "13-11-2017", "08-11-2017", "04-11-2017", "03-11-2017")
-dates.cl.exp1 <- c("09-11-2017")
+dates.bc.exp1 <- c("12-03-2018")
 
-dates.bc.exp2 <- c("09-11-2017", "04-11-2017", "03-11-2017", "31-10-2017", "28-10-2017", "25-10-2017")
-dates.cl.exp2 <- c("09-11-2017")
+dates.exp1 <- dates.bc.exp1
 
-if (style == "classical") {
-    dates.exp1 <- dates.cl.exp1
-    dates.exp2 <- dates.cl.exp2
-} else {
-    dates.exp1 <- dates.bc.exp1
-    dates.exp2 <- dates.bc.exp2
-}
+data.base <- "~/localestimation/"
 
-data.base <- "~/localargdavide/data/"
-#data.base <- "~/local-exps/data/"
-report.dir <- "~/Dropbox/mypapers/AAMAS2018/aamas18-latex-template/img/"
+report.dir <- "~/Dropbox/mypapers/ANTS2018/img/"
 N = 20
-strategies <- c(1, 2, 3)
-do.consensus.on.correct.outcomes.only <- TRUE
 
 dec2node <- function(dec) {
     if (dec == 1)
@@ -47,69 +34,37 @@ dec2node <- function(dec) {
 # Experiment 1 (Increasing difficulty)
 create.df.exp1 <- function(max.trials=50) {
     df <- data.frame()
-    for (s in strategies) {
         for (dat in dates.exp1) {
             for (i in 1:max.trials) {
                 for (d in difficulties) {
                     for (node in nodes){
-                        ##trials.name <- sprintf("%s/experiment1_decision%d-node%d-%s/num20_black%d_byz0_run%d.RUNS", data.base, s, dec2node(s), dat, d, i)
 
-                        if (style == "classical") {                            
-                            trials.name <- sprintf("%s/experiment1_decision%d-node%d-classical-%s/num20_black%d_byz0_run%d.RUNS", data.base, s, node, dat, d, i)
-                        } else {
-                            trials.name <- sprintf("%s/experiment1_decision%d-node%d-%s/num20_black%d_byz0_run%d.RUNS", data.base, s, node, dat, d, i)
-                            }
-                    if (file.exists(trials.name)) {
-                        X <- read.table(trials.name, header=T)
-                        if (nrow(X) != 0){ 
-                            X$difficulty = round(d / (100 - d), 2)
-                            X$strat = s
-                            if (nrow(df) == 0) {
-                                df <- X
-                            } else  {
-                                df <- rbind(df, X)
-                            }
-                        }
-                    }           
+                        trials.name <- sprintf("%s/experiment1-node%d-%s/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, d, i)
+
+                        #print(trials.name)
+                        if (file.exists(trials.name)) {
+                            X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
+                            if (nrow(X) != 0 && !is.null(X)){
+
+                                ## extract last row
+                                X <- X[nrow(X), ]
+                                
+                                X$difficulty = round(d / (100 - d), 2)
+                                X$actual = d / 100
+                                X$predicted = 1 - X$mean / 10^7
+                             if (nrow(df) == 0) {
+                                 df <- X
+                             } else  {
+                                 df <- rbind(df, X)
+                             }
+                         }
+                        }           
                     }
                 }
             }
         }
-    }
     return(df)    
 }
-
-# Experiment 2 (Byzantine robots)
-create.df.exp2 <- function(max.trials=50) {
-    df <- data.frame()
-    for (s in strategies) {
-        for (dat in dates.exp2) {
-            for (i in 1:max.trials) {
-                for (b in num.byzantines) {
-                    if (style == "classical") {
-                        trials.name <- sprintf("%s/experiment2_decision%d-node%d-byz-classical-%s/num20_black34_byz%d_run%d.RUNS", data.base, s, dec2node(s), dat, b, i)
-                    } else {
-                        trials.name <- sprintf("%s/experiment2_decision%d-node%d-byz-%s/num20_black34_byz%d_run%d.RUNS", data.base, s, dec2node(s), dat, b, i)
-                        }
-                    if (file.exists(trials.name)) {
-                        X <- read.table(trials.name, header=T)
-                        if (nrow(X) != 0){ 
-                            X$num.byz = b
-                            X$strat = s
-                            if (nrow(df) == 0) {
-                                df <- X
-                            } else  {
-                                df <- rbind(df, X)
-                            }
-                        }
-                    }           
-                }
-            }
-        }
-    }
-    return(df)    
-}
-
 
 data_summary <- function(data, varname, groupnames){
   require(plyr)
@@ -123,114 +78,53 @@ data_summary <- function(data, varname, groupnames){
  return(data_sum)
 }
 
+df <- create.df.exp1() ## Iterate over runs and create big df
 
-if (do.experiment1) {
+df$error <- df$actual - df$predicted
+df$absError <- abs(df$error)
 
-    df <- create.df.exp1() ## Iterate over runs and create big df
+df$consWhite <- df$predicted < 0.5
 
-    df$Runs <- c()
-    df$Whites <- c()
-    colnames(df)[which(names(df) == "difficulty")] <- "Difficulty"
-    colnames(df)[which(names(df) == "strat")] <- "Strategy"
-    colnames(df)[which(names(df) == "Greens")] <- "Whites"
+df.agg <- data_summary(df, varname="consWhite", groupnames = c("actual"))
+df.agg2 <- data_summary(df, varname=c("absError"), groupnames = c("actual"))
+df.agg3 <- data_summary(df, varname=c("blockchain_size_kB"), groupnames = c("actual"))
 
-    df <- df[df$ExitTime < 4000, ]
-
-    df$StrategyName <- sapply(df$Strategy, strat2strat.name) ## Insert strategy names
-
-    write.csv(df, sprintf("experiment1_%s.csv", style), row.names = FALSE, quote=FALSE)
-    
-    df$E.Ns <- df$Greens == N ## specify if the outcome was correct
-    df.correct.only <- df[df$E.Ns == 1, ]
-
-    df.correct.only$strat.names <- sapply(df.correct.only$strat, strat2strat.name) ## Insert strategy names
-
-    
-    df.agg <- aggregate(df, by=list(df$difficulty, df$strat), FUN=mean, na.rm=TRUE) ## aggregate via number of Byzantine robots
-    df.agg2 <- data_summary(df, varname="ExitTime", groupnames = c("difficulty", "strat"))
+write.csv(df, sprintf("experiment1_%s.csv", style), row.names = FALSE, quote=FALSE)
 
 
-    df.agg2$strat.names <- sapply(df.agg2$strat, strat2strat.name) ## Insert strategy names
-    
-    df.agg$strat.names <- sapply(df.agg$strat, strat2strat.name) ## Insert strategy names
-    df.agg.correct.only <- aggregate(df.correct.only, by=list(df.correct.only$difficulty, df.correct.only$strat), FUN=mean, na.rm=TRUE) ## aggregate via number of Byzantine robots
-    df.agg.correct.only$strat.names <- sapply(df.agg.correct.only$strat, strat2strat.name) ## Insert strategy names
+source("myplothelpers.R")
+plot.error.gg(df,
+              xlab=expression("Actual ("* rho['w']*")"),
+              ylab=expression("Predicted ("* hat(rho)['w']*")"),
+              sprintf("exp1_error.pdf"),
+              report.dir)  
 
-    df$strat.names <- sapply(df$strat, strat2strat.name) ## Insert strategy names
-    
+source("myplothelpers.R")
+plot.cons.gg(df,
+              xlab=expression("Actual ("* rho['w']*")"),
+              ylab=expression("Consensus Time"),
+              sprintf("constime.pdf"),
+              report.dir)  
 
- source("myplothelpers.R")
-plot.exit.prob.gg.facet(df.agg,
-                  xlab=expression("Difficulty ("* rho['b']^'*'*")"),
-                  ylab=expression("Exit probability (E"[N]*")"),
-                  sprintf("facet_exp1_exitprob_%s_correctonly%d.pdf", style, do.consensus.on.correct.outcomes.only),
+
+source("myplothelpers.R")
+plot.exit.prob.gg1(df.agg,
+                  xlab=expression("Actual ("* rho['w']*")"),
+                  ylab=expression("Exit probability"),
+                  sprintf("exitprob.pdf"),
                   report.dir)  
 
 
-    source("myplothelpers.R")
-    df.important <- df[, c("ExitTime", "difficulty", "strat.names")]
-    plot.consensus.time.gg.box(df.correct.only,
-                           xlab=expression("Difficulty ("* rho['b']^'*'*")"),                           
-                           ylab=expression('Consensus time (T'['N']^'correct'*' / 10)'),
-                           sprintf("box_exp1_consensustime_%s_correctonly%d.pdf", style, 1),
-                           report.dir)
-       
-}
-
-if (do.experiment2){
-
-d <- 34
-    
-df <- create.df.exp2() ## Iterate over runs and create big df
-
-    ## Remove crazy outliers
-df <- df[df$ExitTime < 4000, ]
-    
-
-    df$Runs <- c()
-    df$Whites <- c()
-    colnames(df)[which(names(df) == "difficulty")] <- "Difficulty"
-    colnames(df)[which(names(df) == "strat")] <- "Strategy"
-    colnames(df)[which(names(df) == "Greens")] <- "Whites"
-    colnames(df)[which(names(df) == "num.byz")] <- "k"
-
-
-    df$StrategyName <- sapply(df$Strategy, strat2strat.name) ## Insert strategy names
-
-    write.csv(df, sprintf("experiment2_%s.csv", style), row.names = FALSE, quote=FALSE)
-
-
-    
-df$E.Ns <- df$Greens == (N - df$num.byz) ## specify if the outcome was correct
-print(df[order(df$num.byz),]) 
-
-## Remove all row with E.Ns != 1
-df.correct.only <- df[df$E.Ns == 1, ]
-
-## All runs
-df.agg <- aggregate(df, by=list(df$num.byz, df$strat), FUN=mean, na.rm=TRUE) ## aggregate via number of Byzantine robots
-df.agg$strat.names <- sapply(df.agg$strat, strat2strat.name) ## Insert strategy names
-
-## Correct runs only
-df.agg.correct.only <- aggregate(df.correct.only, by=list(df.correct.only$num.byz, df.correct.only$strat), FUN=mean, na.rm=TRUE) ## aggregate via number of Byzantine robots
-df.agg.correct.only$strat.names <- sapply(df.agg.correct.only$strat, strat2strat.name) ## Insert strategy names
-
-
-    df.correct.only$strat.names <- sapply(df.correct.only$strat, strat2strat.name) ## Insert strategy names
-    
 source("myplothelpers.R")
-plot.exit.prob.gg.byz.facet(df.agg,
-                      xlab="Number of Byzantine robots (k)",
-                      ylab=expression("Exit probability (E"[N]*")"),
-                      sprintf("facet_exp2_exitprob_%s_byz_diff%d_correctonly%d.pdf", style, d, do.consensus.on.correct.outcomes.only),
-                      report.dir)  
-
+plot.abs.error.gg(df.agg2,
+                  xlab=expression("Actual ("* rho['w']*")"),
+                  ylab=expression("Mean Absolute Error"),
+                  sprintf("absMeanError.pdf"),
+                  report.dir)  
 
 source("myplothelpers.R")
-plot.consensus.time.gg.byz.box(df.correct.only,
-                      xlab="Number of Byzantine robots (k)",
-                      ylab=expression('Sub-swarm cons. time (T'['N']^'correct'*' / 10)'),
-                      sprintf("box_exp2_consensustime_%s_byz_diff%d_correctonly%d.pdf", style, d, 1),
-                      report.dir)  
-
-}
+plot.blockchain.size.gg(df,
+                  xlab=expression("Actual ("* rho['w']*")"),
+                  ylab=expression("Blockchain size (kB)"),
+                  sprintf("blockchain_size.pdf"),
+                  report.dir)  
