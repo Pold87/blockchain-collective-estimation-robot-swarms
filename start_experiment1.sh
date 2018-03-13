@@ -3,14 +3,19 @@ USERNAME=`whoami`
 mailto='volker.strobel87@gmail.com'
 TEMPLATE='experiments/epuck_EC_locale_template.argos'
 OUTFILE="experiments/epuck$1.argos"
+
+SCTEMPLATE='contracts/smart_contract_template.sol'
+SCOUT='contracts/smart_contract_threshold.sol'
+
 BASEDIR="$HOME/Documents/col_estimation/controllers/epuck_environment_classification/"
 BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
-NUMROBOTS=(4) 
+NUMROBOTS=(20)
+THRESHOLDS=(1000000 100000 10000) 
 REPETITIONS=20
 DECISIONRULE=$3
-PERCENT_BLACKS=(34)
+PERCENT_BLACKS=(40)
 #PERCENT_BLACKS=(34)
 # the one I did all the tests with:
 MININGDIFF=1000000 #was 1000000 before 
@@ -55,8 +60,10 @@ fi
  for i in `seq 1 $REPETITIONS`; do
 
      for y in "${NUMBYZANTINE[@]}"; do
+
+	 for THRESHOLD in "${THRESHOLDS[@]}"; do
  
-	 for k in "${NUMROBOTS[@]}"; do
+	     for k in "${NUMROBOTS[@]}"; do
 
 	     R0=$k
 	     B0=0
@@ -92,6 +99,12 @@ fi
 	fi
 	
 	RADIX=$(printf 'num%d_black%d_byz%d_run%d' $k $PERCENT_BLACK $y $i)
+
+	# Create and compile smart contract
+	sed -e "s|THRESHOLD|$THRESHOLD|g" $SCTEMPLATE > $SCOUT
+	solc --overwrite --abi --bin -o . $SCOUT
+	cp Estimation.bin "${BASEDIR}/data.txt"
+	cp Estimation.abi "${BASEDIR}/interface.txt"	      
 	
 	# Create template
 	sed -e "s|BASEDIR|$BASEDIR|g" -e "s|NUMRUNS|$NUMRUNS|g" -e "s|DATADIR|$DATADIR|g" -e "s|RADIX|$RADIX|g" -e "s|NUMROBOTS|$k|g" -e "s|R0|$R0|g" -e "s|B0|$B0|g" -e "s|PERCENT_BLACK|$PERCENT_BLACK|g" -e "s|PERCENT_WHITE|$PERCENT_WHITE|g" -e "s|DECISIONRULE|$DECISIONRULE|g" -e "s|USEMULTIPLENODES|$USEMULTIPLENODES|g" -e "s|MININGDIFF|$MININGDIFF|g" -e "s|MINERNODE|$MINERNODE|g" -e "s|MINERID|$MINERID|g" -e "s|BASEPORT|$BASEPORT|g" -e "s|USEBACKGROUNDGETHCALLS|$USEBACKGROUNDGETHCALLS|g" -e "s|BLOCKCHAINPATH|$BLOCKCHAINPATH|g" -e "s|MAPPINGPATH|$MAPPINGPATH|g" -e "s|THREADS|$THREADS|g" -e "s|USECLASSICALAPPROACH|$USECLASSICALAPPROACH|g" -e "s|NUMBYZANTINE|$y|g" -e "s|BYZANTINESWARMSTYLE|$BYZANTINESWARMSTYLE|g" -e "s|SUBSWARMCONSENSUS|$SUBSWARMCONSENSUS|g" -e "s|REGENERATEFILE|$REGENERATEFILE|g" -e "s|REALTIME|$REALTIME|g" $TEMPLATE > $OUTFILE
@@ -111,10 +124,11 @@ fi
 	fi
 	
 	 done
+	     done
 	 
-     done
+	 done
     
- done
+     done
 
 
 sendmail $mailto < finished.txt
