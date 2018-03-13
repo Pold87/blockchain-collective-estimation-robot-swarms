@@ -43,7 +43,7 @@ create.df.exp1 <- function(max.trials=50) {
 
                         #print(trials.name)
                         if (file.exists(trials.name)) {
-                            X <- tryCatch(read.table(trials.name, skip = 1), error=function(e) NULL)
+                            X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
                             if (nrow(X) != 0 && !is.null(X)){
 
                                 ## extract last row
@@ -51,7 +51,7 @@ create.df.exp1 <- function(max.trials=50) {
                                 
                                 X$difficulty = round(d / (100 - d), 2)
                                 X$actual = d / 100
-                                X$predicted = 1 - X$V3 / 10^7
+                                X$predicted = 1 - X$mean / 10^7
                              if (nrow(df) == 0) {
                                  df <- X
                              } else  {
@@ -81,10 +81,13 @@ data_summary <- function(data, varname, groupnames){
 df <- create.df.exp1() ## Iterate over runs and create big df
 
 df$error <- df$actual - df$predicted
+df$absError <- abs(df$error)
 
 df$consWhite <- df$predicted < 0.5
 
 df.agg <- data_summary(df, varname="consWhite", groupnames = c("actual"))
+df.agg2 <- data_summary(df, varname=c("absError"), groupnames = c("actual"))
+df.agg3 <- data_summary(df, varname=c("blockchain_size_kB"), groupnames = c("actual"))
 
 write.csv(df, sprintf("experiment1_%s.csv", style), row.names = FALSE, quote=FALSE)
 
@@ -104,11 +107,24 @@ plot.cons.gg(df,
               report.dir)  
 
 
-
-# TODO: Continuous value supplied to discrete scale
 source("myplothelpers.R")
 plot.exit.prob.gg1(df.agg,
                   xlab=expression("Actual ("* rho['w']*")"),
                   ylab=expression("Exit probability"),
                   sprintf("exitprob.pdf"),
+                  report.dir)  
+
+
+source("myplothelpers.R")
+plot.abs.error.gg(df.agg2,
+                  xlab=expression("Actual ("* rho['w']*")"),
+                  ylab=expression("Mean Absolute Error"),
+                  sprintf("absMeanError.pdf"),
+                  report.dir)  
+
+source("myplothelpers.R")
+plot.blockchain.size.gg(df,
+                  xlab=expression("Actual ("* rho['w']*")"),
+                  ylab=expression("Blockchain size (kB)"),
+                  sprintf("blockchain_size.pdf"),
                   report.dir)  

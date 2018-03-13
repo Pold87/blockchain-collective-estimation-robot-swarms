@@ -122,6 +122,31 @@ plot.exit.prob.gg1 <- function(df, xlab, ylab, out.name, report.dir) {
 }
 
 
+plot.abs.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
+
+    p <- ggplot(df, aes(x=actual, y=absError)) +
+        geom_bar(stat="identity", width = 0.015) +
+        theme_classic() +
+        theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_x(seq(0.34, 0.48, 0.02)) +
+        base_breaks_y(seq(0.0, 0.02, 0.005))
+        
+    ggsave(out.name, width=7, height=4)
+}
+
+
 plot.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
     df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
     p <- ggplot(df, aes(x=actual, y=predicted)) +
@@ -149,10 +174,36 @@ plot.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
     ggsave(out.name, width=7, height=4)    
 }
 
+plot.blockchain.size.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=actual, y=blockchain_size_kB)) +
+                                        #        geom_point() +
+        geom_boxplot(aes(group = actual)) +
+         theme_classic() +
+         theme(axis.text=element_text(size=9, colour="gray25"),
+              axis.title=element_text(size=14, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0, 5000, 500)) +
+        base_breaks_x(seq(0.30, 0.50, 0.02)) 
+        
+    print(paste0(report.dir, out.name))
+    ggsave(out.name, width=7, height=4)    
+}
+
+
 
 plot.cons.gg <- function(df, xlab, ylab, out.name, report.dir) {
     df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
-    p <- ggplot(df, aes(x=actual, y=V1)) +
+    p <- ggplot(df, aes(x=actual, y=clock)) +
                                         #        geom_point() +
         geom_boxplot(aes(group = actual)) +
          theme_classic() +
