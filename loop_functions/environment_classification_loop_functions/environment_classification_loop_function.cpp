@@ -92,7 +92,6 @@ void CEnvironmentClassificationLoopFunctions::fillSettings(TConfigurationNode& t
       GetNodeAttribute(tEnvironment, "num_byzantine", numByzantine);
       GetNodeAttribute(tEnvironment, "byzantine_swarm_style", byzantineSwarmStyle);
       GetNodeAttribute(tEnvironment, "use_classical_approach", useClassicalApproach);
-      GetNodeAttribute(tEnvironment, "use_classical_approach", useClassicalApproach);
       GetNodeAttribute(tEnvironment, "subswarm_consensus", subswarmConsensus);
       GetNodeAttribute(tEnvironment, "regenerate_file", regenerateFile);
 
@@ -436,8 +435,6 @@ bool CEnvironmentClassificationLoopFunctions::InitRobots() {
   for(size_t i = 0; i<N_COL; i++){
     robotsInExplorationCounter[i] = 0;
     robotsInDiffusionCounter[i] = 0;
-    byzantineRobotsInExplorationCounter[i] = 0;
-    byzantineRobotsInDiffusionCounter[i] = 0;
   }
 
   int temp1;
@@ -450,7 +447,6 @@ bool CEnvironmentClassificationLoopFunctions::InitRobots() {
       grid[j] = temp1;
     }
   }
-
 
 
   /* Helper array, used to store and shuffle the initial opinions of the robots */
@@ -660,7 +656,7 @@ void CEnvironmentClassificationLoopFunctions::Init(TConfigurationNode& t_node) {
       }
       
       /* Blockchain Statistics */
-      if((!useClassicalApproach) && blockChainFileFlag) {
+      if(blockChainFileFlag) {
 
 	std::stringstream ss;
 	ss << number_of_runs;
@@ -1077,10 +1073,6 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
   for ( UInt32 c=0; c<N_COL; c++ ){
     robotsInExplorationCounter[c] = 0;
     robotsInDiffusionCounter[c] = 0;
-    
-    byzantineRobotsInExplorationCounter[c] = 0;
-    byzantineRobotsInDiffusionCounter[c] = 0;
-    
   }
   CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
   for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
@@ -1089,8 +1081,7 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
     
     EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
     
-    
-    Real x = cEpuck. GetEmbodiedEntity().GetOriginAnchor().Position.GetX(); // X coordinate of the robot
+        Real x = cEpuck. GetEmbodiedEntity().GetOriginAnchor().Position.GetX(); // X coordinate of the robot
     Real y = cEpuck. GetEmbodiedEntity().GetOriginAnchor().Position.GetY(); // Y coordinate of the robot
     
     CVector2 cPos;
@@ -1108,10 +1099,9 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
     EPuck_Environment_Classification::SimulationState& simulationParam = cController.GetSimulationState();
     
     /* Update statistics about the robot opinions*/
-    
-    bool isByzantine = (bool) cController.getByzantineStyle();
 
-    UpdateStatistics(opinion, sStateData, isByzantine);
+    /* TODO: remove third argument */
+    UpdateStatistics(opinion, sStateData, false);
     if(cController.IsExploring())
       UpdateCount(collectedData, cell, cPos, opinion, sStateData, id, simulationParam);
     RandomWalk(movement);
@@ -1143,31 +1133,20 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
 	for ( UInt32 c = 0; c < N_COL; c++ ) {
 	  everyTicksFile << robotsInExplorationCounter[c] << "\t\t" << robotsInDiffusionCounter[c]  << "\t\t";
 	}
-	for ( UInt32 c = 0; c < N_COL; c++ ) {
-	  everyTicksFile << byzantineRobotsInExplorationCounter[c] << "\t\t" << byzantineRobotsInDiffusionCounter[c]  << "\t\t";
-	}
 	everyTicksFile << std::endl;
       }    
   }
 }
-
 
 void CEnvironmentClassificationLoopFunctions::UpdateStatistics(EPuck_Environment_Classification::Opinion& opinion,
 							       EPuck_Environment_Classification::SStateData& sStateData, bool isByzantine) {
 
   /* Increment counters of the opinions and states of the robots */
 
-  if (isByzantine) {
-    if (sStateData.State == EPuck_Environment_Classification::SStateData::STATE_EXPLORING)
-      byzantineRobotsInExplorationCounter[opinion.actualOpinion]++;
-    if (sStateData.State == EPuck_Environment_Classification::SStateData::STATE_DIFFUSING)
-      byzantineRobotsInDiffusionCounter[opinion.actualOpinion]++;
-  } else {
     if (sStateData.State == EPuck_Environment_Classification::SStateData::STATE_EXPLORING)
       robotsInExplorationCounter[opinion.actualOpinion]++;
     if (sStateData.State == EPuck_Environment_Classification::SStateData::STATE_DIFFUSING)
       robotsInDiffusionCounter[opinion.actualOpinion]++;
-  }
 }
 
 /* Update count of the total number of cells and of the cells according with the opinion*/

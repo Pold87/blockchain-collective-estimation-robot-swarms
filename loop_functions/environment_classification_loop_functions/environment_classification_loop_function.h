@@ -79,7 +79,6 @@ private:
 	virtual void PreinitMiner();
 	virtual void setContractAddressAndDistributeEther(std::string contractAddress, std::string minerAddress);
 	virtual bool allSameBCHeight();
-	virtual void connectMore(std::vector<int> allRobotIds);
 	virtual void connectMinerToEveryone();
 	virtual void disconnectAll(std::vector<int> allRobotIds);
 	virtual bool CheckEtherReceived();

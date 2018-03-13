@@ -8,7 +8,7 @@ BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
 NUMROBOTS=(4) 
-REPETITIONS=1
+REPETITIONS=20
 DECISIONRULE=$3
 PERCENT_BLACKS=(34)
 #PERCENT_BLACKS=(34)
@@ -58,8 +58,8 @@ fi
  
 	 for k in "${NUMROBOTS[@]}"; do
 
-	 R0=$(expr $k / 2)
-	 B0=$(expr $k / 2)
+	     R0=$k
+	     B0=0
 
 	 for p in "${PERCENT_BLACKS[@]}"; do
 

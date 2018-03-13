@@ -92,10 +92,6 @@ public:
 	     SInt32 remainingExplorationTime;
 	     SInt32 diffusingDurationTime;
 	     SInt32 remainingDiffusingTime;
-	     /* Following variables are not used anymore, but could be usefull to have them */
-//	     int exportTime[N_COL];
-//	     int numberOfExplorations[N_COL];
-//	     int numberOfDiffusions[N_COL];
 
 	     enum EState {
 	         STATE_EXPLORING,
@@ -119,7 +115,6 @@ public:
    void Diffusing();   
    void Listening();
    void ConnectAndListen();
-   void DiffuseInformation();
    void Move();
    void TurnLeds();
    Real ExponentialFormula(Real mean){
@@ -195,11 +190,8 @@ public:
 
 private:
 
-   void InitGeth(int robotId);
    void WaitForDecision();
    void readNodeMapping();
-   //   void readByzantineMapping();
-   void DistributeID();
    
    CCI_EPuckWheelsActuator* m_pcWheels;
    Real m_fWheelVelocity;
