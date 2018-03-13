@@ -205,11 +205,7 @@ string exec_geth_cmd(int i, string command){
     fullCommandStream << "geth --exec " << "'" << command << "'" << " attach " << datadir_base << i << "/" << "geth.ipc";
   }
 
-  std::string fullCommand = fullCommandStream.str();
-
-  //  if (DEBUG)
-  //cout << "exec_geth_cmd: " << fullCommand << endl;
-  
+  std::string fullCommand = fullCommandStream.str();  
   string res = exec(fullCommand.c_str());
 
   cout << "res in exec_geth_cmd is " << res << endl; 
@@ -1095,6 +1091,22 @@ std::string eventInterface(int i, std::string interface, std::string contractAdd
    return res; 
   
 }
+
+
+std::string eventInterfaceConsensus(int i, std::string interface, std::string contractAddress, int nodeInt, std::string datadirBase) {
+
+  ostringstream fullCommandStream;
+  fullCommandStream << "var cC = web3.eth.contract(" << interface << ");var c = cC.at(" << contractAddress << ");var ev = c.consensusReached({fromBlock: 0, toBlock: \"latest\"});var allStratEvents = ev.get();allStratEvents[allStratEvents.length - 1].args;console.log(allStratEvents[allStratEvents.length - 1].args.c);";
+
+   std::string fullCommand = fullCommandStream.str();
+
+   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+   cout << "Result received from EVENT is: " << res << endl;
+
+   return res; 
+  
+}
+
 
 
 // Interact with a function of a smart contract

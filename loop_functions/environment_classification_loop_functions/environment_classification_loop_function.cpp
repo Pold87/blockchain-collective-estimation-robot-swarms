@@ -486,7 +486,6 @@ bool CEnvironmentClassificationLoopFunctions::InitRobots() {
     EPuck_Environment_Classification::CollectedData& collectedData = cController.GetColData();
 
     /* Resetting initial state of the robots: exploring for everyone */
-    cController.GetReceivedOpinions().clear();
     cController.GetStateData().State = EPuck_Environment_Classification::SStateData::STATE_EXPLORING;
     Real tmpValue = (m_pcRNG->Exponential((Real)sigma));
     cController.GetStateData().remainingExplorationTime = tmpValue;
@@ -683,43 +682,7 @@ void CEnvironmentClassificationLoopFunctions::Init(TConfigurationNode& t_node) {
 
 	m_strOutput = dataDir + passedRadix +"-blockchain.RUN" + nRuns;
 	blockChainFile.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	blockChainFile << "clock";
-
-	// m_strOutput = dataDir + passedRadix +"-whitevotes.RUN" + nRuns;
-	// blockChainWhiteVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	// blockChainWhiteVotes << "clock";
-
-	// m_strOutput = dataDir + passedRadix +"-blackvotes.RUN" + nRuns;
-	// blockChainBlackVotes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	// blockChainBlackVotes << "clock";
-
-	// m_strOutput = dataDir + passedRadix +"-last2votes.RUN" + nRuns;
-	// blockChainLast2Votes.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	// blockChainLast2Votes << "clock";
-
-	/* For all robots */
-
-	CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
-
-	for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
-
-	  CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
-	  EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
-
-	  std::string id = cController.GetId();
-
-	  blockChainFile << "\t" << "robot" << id;
-	  //	  blockChainWhiteVotes << "\t" << "robot" << id;
-	  //	  blockChainBlackVotes << "\t" << "robot" << id;
-	  //	  blockChainLast2Votes << "\t" << "robot" << id;
-
-	}
-
-	blockChainFile << std::endl;
-	//	blockChainWhiteVotes << std::endl;
-	//	blockChainBlackVotes << std::endl;
-	//	blockChainLast2Votes << std::endl;
-
+	blockChainFile << "clock\tmean\tSE\tcount\tblockchain_size_KB" << std::endl;
       }
 
       /*
@@ -851,8 +814,6 @@ void CEnvironmentClassificationLoopFunctions::MoveRobotsAwayFromArena(UInt32 opi
     EPuck_Environment_Classification::Opinion& opinion = cController.GetOpinion();
     EPuck_Environment_Classification::CollectedData& collectedData = cController.GetColData();
 
-    cController.GetReceivedOpinions().clear();
-
     /* Assign a random actual opinion using the shuffled vector */
   }
 }
@@ -884,7 +845,6 @@ void CEnvironmentClassificationLoopFunctions::AssignNewStateAndPosition() {
 	cNewPosition.SetY(yp);
       }
 
-      cController.GetReceivedOpinions().clear();
       /* Resetting initial state of the robots: exploring for everyone */
       cController.GetStateData().State = EPuck_Environment_Classification::SStateData::STATE_EXPLORING;
       cController.GetStateData().remainingExplorationTime = (m_pcRNG->Exponential((Real)sigma));
@@ -929,7 +889,7 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
   CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
   CSpace::TMapPerType::iterator it = m_cEpuck.begin();
   if(exitFlag){
-    if( consensousReached != N_COL ){
+    if( consensousReached == 100 ){
       number_of_runs--;
 
       /* RUNSFILE: Write statistics of the last run */
@@ -946,28 +906,14 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
       /* Save blockchain length */
       if (blockChainFile.is_open())
 	{
-
-
 	  blockChainFile << (GetSpace().GetSimulationClock()) / 10;
-	  //	  blockChainWhiteVotes << (GetSpace().GetSimulationClock()) / 10;
-	  //	  blockChainBlackVotes << (GetSpace().GetSimulationClock()) / 10;
-	  //	  blockChainLast2Votes << (GetSpace().GetSimulationClock()) / 10;
-
-
-	  string contractAddressNoSpace = contractAddress;
-
-	  contractAddressNoSpace.erase(std::remove(contractAddressNoSpace.begin(),
-						   contractAddressNoSpace.end(), '\n'),
-				       contractAddressNoSpace.end());
-
-	  int args[0] = {};
 	  string argsString[0] = {};
 
 	  /* For all robots */
 
 	  CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
 
-	  for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
+	  for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it) {
 
 	    CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
 	    EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
@@ -977,46 +923,15 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 	    int robotNodeInt = cController.getNodeInt();
 
 	    /* Blockchain height per robot */
-	    if ((!useClassicalApproach) && useMultipleNodes) {
 	      if (robotId == 2) {
 		string SE = smartContractInterfaceStringCall(robotId, interface, contractAddress, "calcSE", argsString, 0, 0, robotNodeInt, blockchainPath);
-		blockChainFile << "\t" << SE;
+		string mean = smartContractInterfaceStringCall(robotId, interface, contractAddress, "getMean", argsString, 0, 0, robotNodeInt, blockchainPath);
+		string count = smartContractInterfaceStringCall(robotId, interface, contractAddress, "getCount", argsString, 0, 0, robotNodeInt, blockchainPath);
+		string blockchainSize = cController.getBlockChainSize();
+		blockChainFile << "\t" << SE << "\t" << mean << "\t" << count << "\t" << blockchainSize;
 	      }	      
-	    } else {
-	      blockChainFile << "\t" << getBlockChainLength(robotId);
-	    }
-
-	    /* Number of white votes per robot */
-
-	    // string numWhite;
-	    // if (useMultipleNodes)
-	    //   numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0,
-	    // 					robotNodeInt, blockchainPath);
-	    // else
-	    //   numWhite = smartContractInterface(robotId, interface, contractAddressNoSpace, "whiteVotes", args, 0, 0);
-
-	    // numWhite.erase(std::remove(numWhite.begin(), numWhite.end(), '\n'), numWhite.end());
-
-	    // blockChainWhiteVotes << "\t" << numWhite;
-
-	    // /* Number of black votes per robot */
-	    // string numBlack;
-	    // if (useMultipleNodes)
-	    //   numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0,
-	    // 					robotNodeInt, blockchainPath);
-	    // else
-	    //   numBlack = smartContractInterface(robotId, interface, contractAddressNoSpace, "blackVotes", args, 0, 0);
-
-	    // numBlack.erase(std::remove(numBlack.begin(), numBlack.end(), '\n'), numBlack.end());
-	    // blockChainBlackVotes << "\t" << numBlack;
-
 	  }
-
 	  blockChainFile << std::endl;
-	  //	  blockChainWhiteVotes << std::endl;
-	  //	  blockChainBlackVotes << std::endl;
-	  //	  blockChainLast2Votes << std::endl;
-
 	}
 
 
@@ -1118,9 +1033,6 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 	      /* Close blockchain files */
 	      if (blockChainFile.is_open()){
 		blockChainFile.close();
-		//		blockChainWhiteVotes.close();
-		//		blockChainBlackVotes.close();
-		//		blockChainLast2Votes.close();
 	      }
 	      
 	      /* globalStatFile: write the general statistics, such as counted cells,
@@ -1219,9 +1131,7 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
     RandomWalk(movement);
   }
   
-  /* Check if a consensous has been reached (i.e.: if every robots agree with a colour) */
-
-  /* TODO */
+  /* Check if a consensous has been reached (i.e., SE is below threshold) */
 
   bool totalConsensusReached = true; 
   for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
@@ -1229,11 +1139,12 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
     CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
     
     EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
-    
-    
-    
+    totalConsensusReached = totalConsensusReached && cController.getConsensusReached();    
   }
-  
+
+  if (totalConsensusReached) {
+    consensousReached = 100;
+  }
   
   
   /* EVERYTICKSFILE: Write this statistics only if the file is open and it's the right timeStep (multiple of timeStep) */
@@ -1250,52 +1161,8 @@ void CEnvironmentClassificationLoopFunctions::PreStep() {
 	  everyTicksFile << byzantineRobotsInExplorationCounter[c] << "\t\t" << byzantineRobotsInDiffusionCounter[c]  << "\t\t";
 	}
 	everyTicksFile << std::endl;
-      }
-    
-    /* Save blockchain length */
-    if (blockChainFile.is_open())
-      {
-		
-	blockChainFile << (GetSpace().GetSimulationClock()) / 10;
-
-	string contractAddressNoSpace = contractAddress;
-
-	contractAddressNoSpace.erase(std::remove(contractAddressNoSpace.begin(),
-						 contractAddressNoSpace.end(), '\n'),
-				     contractAddressNoSpace.end());
-	
-	int args[0] = {};
-	string argsString[0] = {};
-
-	/* For all robots */
-	
-	      CSpace::TMapPerType& m_cEpuck = GetSpace().GetEntitiesByType("epuck");
-	      
-	      for(CSpace::TMapPerType::iterator it = m_cEpuck.begin();it != m_cEpuck.end();++it){
-		
-		CEPuckEntity& cEpuck = *any_cast<CEPuckEntity*>(it->second);
-		EPuck_Environment_Classification& cController =  dynamic_cast<EPuck_Environment_Classification&>(cEpuck.GetControllableEntity().GetController());
-		
-		std::string id = cController.GetId();
-		int robotId = Id2Int(id);
-		int robotNodeInt = cController.getNodeInt();
-
-		if (useMultipleNodes) {
-
-		  /* Blockchain height per robot */
-		  if (robotId == 2) {
-		    string SE = smartContractInterfaceStringCall(robotId, interface, contractAddress, "calcSE", argsString, 0, 0, robotNodeInt, blockchainPath);
-		    blockChainFile << "\t" << SE;
-		  }
-		    } else {
-
-		      /* Blockchain height per robot */
-		      blockChainFile << "\t" << getBlockChainLength(robotId);
-		    }
-		  }
-		  blockChainFile << std::endl;
-	    }
-	}
+      }    
+  }
 }
 
 

@@ -182,11 +182,16 @@ public:
      return byzantineStyle;
    }
 
+   inline int getConsensusReached() {
+     return  consensusReached;
+   }
+   
    inline void setByzantineStyle(int style) {
      byzantineStyle = style;
    }
    
    void UpdateNeighbors(std::set<int> newNeighbors);
+   string getBlockChainSize();
 
 private:
 
@@ -234,6 +239,7 @@ private:
    int byzantineStyle;
    bool threadCurrentlyRunning;
    int eventTrials;
+   bool consensusReached;
    bool receivedDecision; // Indicates if the robots already received a new opinion from the smart contract (for multi threading)
    CColor red, blue, green;                    // Add here eventual additional color AGGIUNGERECOLORI
 //   int totalCounted, countedOfThisOpinion[N_COL];  USED JUST FOR STATISTICS, no more used

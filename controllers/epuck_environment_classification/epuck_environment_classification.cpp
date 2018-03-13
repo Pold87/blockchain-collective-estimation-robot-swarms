@@ -88,6 +88,7 @@ void EPuck_Environment_Classification::Init(TConfigurationNode& t_node) {
   eventTrials = 0;
   receivedDecision = true;
   threadCurrentlyRunning = false;
+  consensusReached = false;
   
   /* Initialize the actuators (and sensors) and the initial velocity as straight walking*/
   m_pcWheels = GetActuator<CCI_EPuckWheelsActuator>("epuck_wheels");
@@ -305,6 +306,17 @@ void EPuck_Environment_Classification::RandomWalk() {
   }
 }
 
+string Epuck_Environment_Classification::getBlockChainSize() {
+
+  ostringstream fullCommandStream;
+  fullCommandStream << "du " << simulationParams.blockchainPath << robotId << "/geth/chaindata/";
+  std::string fullCommand = fullCommandStream.str();  
+  string res = exec(fullCommand.c_str());
+
+  return res;
+}
+
+
 
 /************************************************* EXPLORING STATE *********************************************/
 /***************************************************************************************************************/
@@ -331,8 +343,7 @@ void EPuck_Environment_Classification::Explore() {
    *   different params for the random variable;
    */
   else{
-    opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));
-    
+    opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));    
     opinion.countedCellOfActualOpinion = 0;
     collectedData.count = 0;
     m_sStateData.State = SStateData::STATE_DIFFUSING;
@@ -359,16 +370,15 @@ void EPuck_Environment_Classification::WaitForDecision() {
   string eventResult;
 
   cout << "Robot id is " << robotId << endl;
-  eventResult = eventInterface(robotId, interface, contractAddress, nodeInt, simulationParams.blockchainPath);	
+  eventResult = eventInterfaceConsensus(robotId, interface, contractAddress, nodeInt, simulationParams.blockchainPath);	
 
   if (eventResult.find("Error") == string::npos) {
-
 	vector<string> splitResult = split(eventResult, ' ');    
-	std::string consensusReached = splitResult[0];      
-	cout << "consensusReach is " << consensusReached << endl;
-
-	if (consensousReached == "2")	
-	  receivedDecision = true;
+	std::string s_consensusReached = splitResult[0];      
+	cout << "consensusReached is " << s_consensusReached << endl;
+	if (s_consensusReached == "2") {
+	  consensusReached = true;
+	}	  
   }
   threadCurrentlyRunning = false;
 }
@@ -381,7 +391,7 @@ void EPuck_Environment_Classification::ConnectAndListen() {
   const CCI_EPuckRangeAndBearingSensor::TPackets& tPackets = m_pcRABS->GetPackets();
 	
   for(size_t i = 0; i < tPackets.size() ; ++i) {
-    currentNeighbors.insert(tPackets[i]->Data[3]);   	      
+    currentNeighbors.insert(tPackets[i]->Data[0]);   	      
   }    
 
   /* Update Neighbors */
@@ -389,42 +399,18 @@ void EPuck_Environment_Classification::ConnectAndListen() {
   m_pcRABS->ClearPackets();
 }
 
-
-void EPuck_Environment_Classification::DiffuseInformation() {
-  int robotId = Id2Int(GetId());
-
-  /* LEDS must be lighted with intermittence in diffusing state */
-  if(m_sStateData.remainingDiffusingTime%3)
-    m_pcLEDs->SetAllColors(CColor::GREEN);
-
-      /* Following things will have always to be done if in diffusing state. Here robot sends its opinion,
-       * quality and ID. toSend it's the variable of TData type used from Epuck RAB to send datas. We will
-       * prepare this variable before to send it. It has 4 Byte of datas
-       */
-      
-      CCI_EPuckRangeAndBearingActuator::TData toSend;
-
-      /* First Byte used for the opinion of the robot */
-      toSend[0] = 0;
-      toSend[1] = 0;
-      toSend[2] = 0;
-      UInt32 idConversion = Id2Int(GetId());
-      toSend[3] = idConversion;
-      /* Send datas and decrement the diffusing time left */
-      m_pcRABA->SetData(toSend);
-}
-
 void EPuck_Environment_Classification::Diffusing() {
 
-
-  /* TODO: Query consensous reached */
+  /* Query consensous reached */
+    if (!threadCurrentlyRunning){
+      threadCurrentlyRunning = true;
+      thread t1(&EPuck_Environment_Classification::WaitForDecision, this);
+      t1.detach();
+    }
   
-    /* Change to EXPLORING state and choose another opinion with decision rules */
-    m_sStateData.State = SStateData::STATE_EXPLORING;
+  /* Change to EXPLORING state and choose another opinion with decision rules */
+  m_sStateData.State = SStateData::STATE_EXPLORING;
     
-    /* After decision has been taken, sensed values are deleted */
-    receivedOpinions.clear();    
-  }
 }
 
 
@@ -501,10 +487,7 @@ void EPuck_Environment_Classification::fromLoopFunctionResPrepare(){
   collectedData.count = 0;
 
   CCI_EPuckRangeAndBearingActuator::TData toSend;
-  toSend[0] = 100;
-  toSend[1] = 100;
-  toSend[2] = 100;
-  toSend[3] = Id2Int(GetId());
+  toSend[0] = Id2Int(GetId());
   m_pcRABA->SetData(toSend);
   m_pcRABS->ClearPackets();
   receivedOpinions.clear();
