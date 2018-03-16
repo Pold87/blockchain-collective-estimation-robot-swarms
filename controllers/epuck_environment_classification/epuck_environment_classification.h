@@ -177,8 +177,8 @@ public:
      return byzantineStyle;
    }
 
-   inline int getConsensusReached() {
-     return  consensusReached;
+   inline bool getConsensusReached() {
+     return consensusReached;
    }
    
    inline void setByzantineStyle(int style) {

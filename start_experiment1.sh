@@ -12,7 +12,7 @@ BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
 NUMROBOTS=(20)
-THRESHOLDS=(1000000 100000 10000) 
+THRESHOLDS=(80000 60000 220000 240000) 
 REPETITIONS=20
 DECISIONRULE=$3
 PERCENT_BLACKS=(40)
@@ -31,7 +31,7 @@ USEDNODES=($1 $2)
 echo "USEDNODES is ${USEDNODES}"
 BASEPORT=$((33000 + $1 * 200))
 echo "BASEPORT is ${BASEPORT}"
-DATADIR="data/experiment1_decision${DECISIONRULE}-node$1-${NOW}/"
+DATADIRBASE="data/experiment1_decision${DECISIONRULE}-node$1-${NOW}/"
 REGENERATEFILE="$(pwd)/regenerate${USEDNODES[0]}.sh"
 # The miner node is the first of the used nodes
 MINERNODE=${USEDNODES[0]}
@@ -52,8 +52,6 @@ fi
  if [ $CHANGEDIFFIULTY ]; then
      ./create_geths.sh $MININGDIFF
  fi
-
- mkdir -p $DATADIR
  
  # Iterate over experimental settings and start experiments
  
@@ -62,6 +60,11 @@ fi
      for y in "${NUMBYZANTINE[@]}"; do
 
 	 for THRESHOLD in "${THRESHOLDS[@]}"; do
+
+
+	     DATADIR="${DATADIRBASE}${THRESHOLD}/"
+	     mkdir -p $DATADIR
+	     
  
 	     for k in "${NUMROBOTS[@]}"; do
 

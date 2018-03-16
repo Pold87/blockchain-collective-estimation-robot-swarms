@@ -378,9 +378,11 @@ void EPuck_Environment_Classification::WaitForDecision() {
 	vector<string> splitResult = split(eventResult, ' ');    
 	std::string s_consensusReached = splitResult[0];      
 	cout << "consensusReached is " << s_consensusReached << endl;
-	if (s_consensusReached == "2") {
+	if (atoi(s_consensusReached.c_str()) == 2) {
 	  consensusReached = true;
-	}	  
+	} else {
+	  cout << "consensusReached Epuck is " << consensusReached << endl;
+	}
   }
   threadCurrentlyRunning = false;
 }

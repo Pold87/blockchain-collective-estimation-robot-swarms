@@ -910,7 +910,7 @@ bool CEnvironmentClassificationLoopFunctions::IsExperimentFinished() {
 		string mean = smartContractInterfaceStringCall(robotId, interface, contractAddress, "getMean", argsString, 0, 0, robotNodeInt, blockchainPath);
 		string count = smartContractInterfaceStringCall(robotId, interface, contractAddress, "getCount", argsString, 0, 0, robotNodeInt, blockchainPath);
 		string blockchainSize = cController.getBlockChainSize();
-		blockChainFile << "\t" << SE << "\t" << mean << "\t" << count << "\t" << blockchainSize;
+		blockChainFile << "\t" << atoi(mean.c_str()) << "\t" << atoi(SE.c_str()) << "\t" << atoi(count.c_str()) << "\t" << atoi(blockchainSize.c_str());
 	      }	      
 	  }
 	  blockChainFile << std::endl;
