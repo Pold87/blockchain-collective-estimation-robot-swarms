@@ -8,18 +8,21 @@ source("myplothelpers.R")
 ## 
 
 difficulties <- c(34, 36, 38, 40, 42, 44, 46, 48)
+thresholds <- c(240000, 220000, 200000, 180000, 160000, 140000, 120000, 100000, 80000, 60000)
 style <- "blockchain"
 nodes <- 0:1
 
 do.experiment1 <- TRUE
 
 dates.bc.exp1 <- c("12-03-2018")
+dates.bc.exp2 <- c("14-03-2018")
 
 dates.exp1 <- dates.bc.exp1
+dates.exp2 <- dates.bc.exp2
 
 data.base <- "~/localestimation/"
 
-report.dir <- "~/Dropbox/mypapers/ANTS2018/img/"
+report.dir <- "~/Dropbox/mypapers/ANTS2018/llncs-ants/img/"
 N = 20
 
 dec2node <- function(dec) {
@@ -66,6 +69,42 @@ create.df.exp1 <- function(max.trials=50) {
     return(df)    
 }
 
+# Experiment 2 (Varying threshold)
+create.df.exp2 <- function(max.trials=30) {
+    d <- 40
+    df <- data.frame()
+        for (dat in dates.exp2) {
+            for (i in 1:max.trials) {
+                for (t in thresholds) {
+                    for (node in nodes){
+
+                        trials.name <- sprintf("%s/experiment1_decision2-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
+                        if (file.exists(trials.name)) {
+                            X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
+                            if (nrow(X) != 0 && !is.null(X)){
+
+                                ## extract last row
+                                X <- X[nrow(X), ]
+
+                                X$threshold <- t / 10^7
+                                X$difficulty = round(d / (100 - d), 2)
+                                X$actual = d / 100
+                                X$predicted = 1 - X$mean / 10^7
+                             if (nrow(df) == 0) {
+                                 df <- X
+                             } else  {
+                                 df <- rbind(df, X)
+                             }
+                            }
+                        }           
+                    }
+                }
+            }
+        }
+    return(df)    
+}
+
+
 data_summary <- function(data, varname, groupnames){
   require(plyr)
   summary_func <- function(x, col){
@@ -79,9 +118,18 @@ data_summary <- function(data, varname, groupnames){
 }
 
 df <- create.df.exp1() ## Iterate over runs and create big df
+df <- df[df$clock < 1000, ]
 
 df$error <- df$actual - df$predicted
+
+df2 <- create.df.exp2() ## Iterate over runs and create big df
+
+df2$error <- df2$actual - df2$predicted
+
 df$absError <- abs(df$error)
+
+df2$absError <- abs(df2$error)
+df2$squaredError <- df2$error * df2$error
 
 df$consWhite <- df$predicted < 0.5
 
@@ -94,14 +142,14 @@ write.csv(df, sprintf("experiment1_%s.csv", style), row.names = FALSE, quote=FAL
 
 source("myplothelpers.R")
 plot.error.gg(df,
-              xlab=expression("Actual ("* rho['w']*")"),
-              ylab=expression("Predicted ("* hat(rho)['w']*")"),
+              xlab=expression("Actual ("* rho['b']*")"),
+              ylab=expression("Predicted ("* hat(rho)['b']*")"),
               sprintf("exp1_error.pdf"),
               report.dir)  
 
 source("myplothelpers.R")
 plot.cons.gg(df,
-              xlab=expression("Actual ("* rho['w']*")"),
+              xlab=expression("Actual ("* rho['b']*")"),
               ylab=expression("Consensus Time"),
               sprintf("constime.pdf"),
               report.dir)  
@@ -109,22 +157,55 @@ plot.cons.gg(df,
 
 source("myplothelpers.R")
 plot.exit.prob.gg1(df.agg,
-                  xlab=expression("Actual ("* rho['w']*")"),
+                  xlab=expression("Actual ("* rho['b']*")"),
                   ylab=expression("Exit probability"),
                   sprintf("exitprob.pdf"),
                   report.dir)  
 
 
 source("myplothelpers.R")
-plot.abs.error.gg(df.agg2,
-                  xlab=expression("Actual ("* rho['w']*")"),
+plot.abs.error.gg(df,
+                  xlab=expression("Actual ("* rho['b']*")"),
                   ylab=expression("Mean Absolute Error"),
                   sprintf("absMeanError.pdf"),
                   report.dir)  
 
+
 source("myplothelpers.R")
 plot.blockchain.size.gg(df,
-                  xlab=expression("Actual ("* rho['w']*")"),
-                  ylab=expression("Blockchain size (kB)"),
+                  xlab=expression("Actual ("* rho['b']*")"),
+                  ylab=expression("Blockchain size (MB)"),
                   sprintf("blockchain_size.pdf"),
                   report.dir)  
+
+source("myplothelpers.R")
+plot.blockchain.size.by.tau.gg(df2,
+                  xlab=expression("Threshold ("*tau*")"),
+                  ylab=expression("Blockchain size (MB)"),
+                  sprintf("blockchain_size_tau.pdf"),
+                  report.dir)  
+
+
+
+source("myplothelpers.R")
+plot.error.by.tau.gg(df2,
+                  xlab=expression("Threshold ("*tau*")"),
+                  ylab=expression("Error"),
+                  sprintf("error_tau.pdf"),
+                  report.dir)  
+
+source("myplothelpers.R")
+plot.MAE.by.tau.gg(df2,
+                  xlab=expression("Threshold ("*tau*")"),
+                  ylab=expression("Mean absolute error"),
+                  sprintf("MAE_tau.pdf"),
+                  report.dir)  
+
+source("myplothelpers.R")
+plot.MSE.by.tau.gg(df2,
+                  xlab=expression("Threshold ("*tau*")"),
+                  ylab=expression("Mean squared error"),
+                  sprintf("MSE_tau.pdf"),
+                  report.dir)  
+
+
