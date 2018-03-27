@@ -9,6 +9,7 @@ source("myplothelpers.R")
 
 difficulties <- c(34, 36, 38, 40, 42, 44, 46, 48)
 thresholds <- c(240000, 220000, 200000, 180000, 160000, 140000, 120000, 100000, 80000, 60000)
+num.byz <- 0:12
 style <- "blockchain"
 nodes <- 0:1
 
@@ -16,9 +17,11 @@ do.experiment1 <- TRUE
 
 dates.bc.exp1 <- c("12-03-2018")
 dates.bc.exp2 <- c("14-03-2018")
+dates.bc.exp3 <- c("21-03-2018")
 
 dates.exp1 <- dates.bc.exp1
 dates.exp2 <- dates.bc.exp2
+dates.exp3 <- dates.bc.exp3
 
 data.base <- "~/localestimation/"
 
@@ -103,6 +106,45 @@ create.df.exp2 <- function(max.trials=30) {
         }
     return(df)    
 }
+
+
+## Experiment 3 (Increasing the number of Byzantine robots)
+
+create.df.exp3 <- function(max.trials=30) {
+    d <- 40
+    df <- data.frame()
+    t <- 140000
+        for (dat in dates.exp3) {
+            for (i in 1:max.trials) {
+                for (b in num.byz) {
+                    for (node in nodes){
+
+                        trials.name <- sprintf("%s/experiment1_decision2-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
+                        if (file.exists(trials.name)) {
+                            X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
+                            if (nrow(X) != 0 && !is.null(X)){
+
+                                ## extract last row
+                                X <- X[nrow(X), ]
+
+                                X$threshold <- t / 10^7
+                                X$difficulty = round(d / (100 - d), 2)
+                                X$actual = d / 100
+                                X$predicted = 1 - X$mean / 10^7
+                             if (nrow(df) == 0) {
+                                 df <- X
+                             } else  {
+                                 df <- rbind(df, X)
+                             }
+                            }
+                        }
+                        }
+                }
+            }
+        }
+    return(df)    
+}
+
 
 
 data_summary <- function(data, varname, groupnames){
