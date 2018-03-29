@@ -255,6 +255,35 @@ plot.error.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
 }
 
 
+plot.error.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=byz, y=error)) +
+        geom_boxplot(aes(group = byz)) +
+                geom_smooth(method="lm") +
+                geom_abline(slope = 0, lty = 2) + 
+         theme_classic() +
+         theme(axis.text=element_text(size=15, colour="gray25"),
+              axis.title=element_text(size=20, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(-0.05, 0.05, 0.01)) +
+        base_breaks_x(seq(0, 12, 1))         
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
+    ggsave(out.name, width=7, height=4)    
+}
+
+
+
 plot.MAE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=threshold, y=absError)) +
         geom_boxplot(aes(group = threshold)) +

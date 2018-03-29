@@ -109,7 +109,6 @@ create.df.exp2 <- function(max.trials=30) {
 
 
 ## Experiment 3 (Increasing the number of Byzantine robots)
-
 create.df.exp3 <- function(max.trials=30) {
     d <- 40
     df <- data.frame()
@@ -119,14 +118,14 @@ create.df.exp3 <- function(max.trials=30) {
                 for (b in num.byz) {
                     for (node in nodes){
 
-                        trials.name <- sprintf("%s/experiment1_decision2-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
+                        trials.name <- sprintf("%s/experiment2-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
                         if (file.exists(trials.name)) {
                             X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
                             if (nrow(X) != 0 && !is.null(X)){
 
                                 ## extract last row
                                 X <- X[nrow(X), ]
-
+                                X$byz <- b
                                 X$threshold <- t / 10^7
                                 X$difficulty = round(d / (100 - d), 2)
                                 X$actual = d / 100
@@ -166,7 +165,20 @@ df$error <- df$actual - df$predicted
 
 df2 <- create.df.exp2() ## Iterate over runs and create big df
 
+df3 <- create.df.exp3() ## Iterate over runs and create big df
+df3$error <- df3$actual - df3$predicted
+df3$absError <- abs(df3$error)
+df3$squaredError <- df3$error * df3$error
+df3$consWhite <- df3$predicted < 0.5
+
+
+
+df$consWhite <- df$predicted < 0.5
+
+
 df2$error <- df2$actual - df2$predicted
+
+
 
 df$absError <- abs(df$error)
 
@@ -251,3 +263,13 @@ plot.MSE.by.tau.gg(df2,
                   report.dir)  
 
 
+
+## Experiment 3
+
+
+source("myplothelpers.R")
+plot.error.by.byz.gg(df3,
+                  xlab=expression("Number of Byzantines"),
+                  ylab=expression("Error"),
+                  sprintf("error_byz.pdf"),
+                  report.dir) 
