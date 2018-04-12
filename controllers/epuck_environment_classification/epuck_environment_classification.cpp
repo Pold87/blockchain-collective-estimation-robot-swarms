@@ -179,30 +179,21 @@ void EPuck_Environment_Classification::UpdateNeighbors(set<int> newNeighbors) {
   for (it = neighborsToRemove.begin(); it != neighborsToRemove.end(); ++it) {
     
     int i = *it;
-    if (simulationParams.useMultipleNodes) {
-      string e = enodes[i];
-      if (simulationParams.useBackgroundGethCalls)
-	remove_peer_bg(robotId, e, nodeInt, simulationParams.blockchainPath);
-      else
-	remove_peer(robotId, e, nodeInt, simulationParams.blockchainPath);
-    } else {
-      remove_peer(robotId, get_enode(i));
-    }
+    string e = enodes[i];
+    if (simulationParams.useBackgroundGethCalls)
+      remove_peer_bg(robotId, e, nodeInt, simulationParams.blockchainPath);
+    else
+      remove_peer(robotId, e, nodeInt, simulationParams.blockchainPath);    
   }
    
 
   for (it = neighborsToAdd.begin(); it != neighborsToAdd.end(); ++it) {
     int i = *it;
-    if (simulationParams.useMultipleNodes) {
-      string e = enodes[i];
-      if (simulationParams.useBackgroundGethCalls)
-	add_peer_bg(robotId, e, nodeInt, simulationParams.blockchainPath);
-      else
-	add_peer(robotId, e, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
-    }
-    else {
-      add_peer(robotId, get_enode(i));
-    }
+    string e = enodes[i];
+    if (simulationParams.useBackgroundGethCalls)
+      add_peer_bg(robotId, e, nodeInt, simulationParams.blockchainPath);
+    else
+      add_peer(robotId, e, nodeInt, simulationParams.basePort, simulationParams.blockchainPath);
   }
   
   // Update neighbor array
@@ -345,12 +336,22 @@ void EPuck_Environment_Classification::Explore() {
    *   different params for the random variable;
    */
   else{
-    opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));    
+
+
+    if (byzantineStyle == 1) {
+      //opinion.quality = m_pcRNG->Uniform(CRange<Real>(0.0,1.0));
+      opinion.quality = 1.0;
+    } else {
+      opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));    
+    }
+
     opinion.countedCellOfActualOpinion = 0;
     collectedData.count = 0;
     m_sStateData.State = SStateData::STATE_DIFFUSING;
-    
+
+
     uint opinionInt = (uint) (opinion.quality * 10000000); // Convert opinion quality to a value between 0 and 10000000
+    
     string args[0] = {};
     smartContractInterfaceStringBg(robotId, interface, contractAddress, "vote", args, 0, opinionInt, nodeInt, simulationParams.blockchainPath);
     

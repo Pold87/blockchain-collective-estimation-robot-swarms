@@ -199,6 +199,7 @@ private:
 	int numByzantine;
 	int byzantineSwarmStyle;
 	bool useClassicalApproach;
+	int lengthOfRuns;
 	bool subswarmConsensus;
 };
 

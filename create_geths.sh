@@ -1,4 +1,4 @@
-RESERVEDNODES=(0 1)
+RESERVEDNODES=(13)
 TEMPLATEA="$HOME/go-ethereum/circle.yml.template"
 TEMPLATEB="$HOME/go-ethereum/vendor/github.com/ethereum/ethash/ethash.go.template"
 TEMPLATEC="$HOME/go-ethereum/core/block_validator.go.template"
@@ -30,5 +30,3 @@ for i in $RESERVEDNODES; do
     mv "$HOME/go-ethereum${i}/build/bin/geth" "$HOME/go-ethereum${i}/build/bin/geth${i}"
     
 done
-
-
