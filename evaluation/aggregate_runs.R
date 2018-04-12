@@ -17,7 +17,10 @@ do.experiment1 <- TRUE
 
 dates.bc.exp1 <- c("12-03-2018")
 dates.bc.exp2 <- c("14-03-2018")
-dates.bc.exp3 <- c("21-03-2018")
+
+dates.bc.exp3 <- c("21-03-2018") ## non-safe
+
+dates.bc.exp3 <- c("29-03-2018", "30-03-2018") ## safe
 
 dates.exp1 <- dates.bc.exp1
 dates.exp2 <- dates.bc.exp2
@@ -109,7 +112,7 @@ create.df.exp2 <- function(max.trials=30) {
 
 
 ## Experiment 3 (Increasing the number of Byzantine robots)
-create.df.exp3 <- function(max.trials=30) {
+create.df.exp3 <- function(max.trials=30, safe=T) {
     d <- 40
     df <- data.frame()
     t <- 140000
@@ -118,7 +121,11 @@ create.df.exp3 <- function(max.trials=30) {
                 for (b in num.byz) {
                     for (node in nodes){
 
-                        trials.name <- sprintf("%s/experiment2-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
+                        if (safe) {
+                            trials.name <- sprintf("%s/experiment3-safe-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
+                        } else {
+                            trials.name <- sprintf("%s/experiment3-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
+                            }
                         if (file.exists(trials.name)) {
                             X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
                             if (nrow(X) != 0 && !is.null(X)){
@@ -165,11 +172,18 @@ df$error <- df$actual - df$predicted
 
 df2 <- create.df.exp2() ## Iterate over runs and create big df
 
-df3 <- create.df.exp3() ## Iterate over runs and create big df
-df3$error <- df3$actual - df3$predicted
-df3$absError <- abs(df3$error)
-df3$squaredError <- df3$error * df3$error
-df3$consWhite <- df3$predicted < 0.5
+df3.safe <- create.df.exp3(safe=T) ## Iterate over runs and create big df
+df3.safe$error <- df3.safe$actual - df3.safe$predicted
+df3.safe$absError <- abs(df3.safe$error)
+df3.safe$squaredError <- df3.safe$error * df3.safe$error
+df3.safe$consWhite <- df3.safe$predicted < 0.5
+
+
+df3.nonsafe <- create.df.exp3(safe=F) ## Iterate over runs and create big df
+df3.nonsafe$error <- df3.nonsafe$actual - df3.nonsafe$predicted
+df3.nonsafe$absError <- abs(df3.nonsafe$error)
+df3.nonsafe$squaredError <- df3.nonsafe$error * df3.nonsafe$error
+df3.nonsafe$consWhite <- df3.nonsafe$predicted < 0.5
 
 
 
@@ -263,13 +277,19 @@ plot.MSE.by.tau.gg(df2,
                   report.dir)  
 
 
-
-## Experiment 3
-
-
+## Experiment 3 non-safe
 source("myplothelpers.R")
-plot.error.by.byz.gg(df3,
+plot.error.by.byz.gg(df3.nonsafe,
                   xlab=expression("Number of Byzantines"),
                   ylab=expression("Error"),
-                  sprintf("error_byz.pdf"),
+                  sprintf("error_byz-nonsafe.pdf"),
+                  report.dir) 
+
+
+## Experiment 3 safe
+source("myplothelpers.R")
+plot.error.by.byz.gg(df3.safe,
+                  xlab=expression("Number of Byzantines"),
+                  ylab=expression("Error"),
+                  sprintf("error_byz-safe.pdf"),
                   report.dir) 

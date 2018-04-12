@@ -274,7 +274,7 @@ plot.error.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        base_breaks_y(seq(-0.05, 0.05, 0.01)) +
+        base_breaks_y(seq(-0.10, 0.05, 0.01)) +
         base_breaks_x(seq(0, 12, 1))         
 
     out.name <- paste0(report.dir, out.name)
