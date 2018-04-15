@@ -3,10 +3,8 @@ USERNAME=`whoami`
 mailto='volker.strobel87@gmail.com'
 TEMPLATE='experiments/epuck_EC_locale_template.argos'
 OUTFILE="experiments/epuck$1.argos"
-
 SCTEMPLATE='contracts/smart_contract_template.sol'
 SCOUT='contracts/smart_contract_threshold.sol'
-
 BASEDIR="$HOME/Documents/col_estimation/controllers/epuck_environment_classification/"
 BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
@@ -16,10 +14,7 @@ THRESHOLDS=(80000 60000 220000 240000)
 REPETITIONS=20
 DECISIONRULE=$3
 PERCENT_BLACKS=(40)
-#PERCENT_BLACKS=(34)
-# the one I did all the tests with:
-MININGDIFF=1000000 #was 1000000 before 
-# never go with the difficulty below 131072! (see https://github.com/ethereum/go-ethereum/issues/3590)
+MININGDIFF=1000000
 USEMULTIPLENODES=true
 USEBACKGROUNDGETHCALLS=true
 MAPPINGPATH="$HOME/Documents/col_estimation/experiments/config$1.txt"
