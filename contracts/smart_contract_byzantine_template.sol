@@ -44,10 +44,12 @@ contract Estimation {
     // Initialize this sender if it's the first time it votes
     if (weights[msg.sender] == 0) {
       weights[msg.sender] = 100000000;
-    } else if (count > 2) {
+    } else if (count > 20) {
       // Update its quality
       //weights[msg.sender] += 100 * (se - abs(delta));
-      weights[msg.sender] += (2000000 - abs(delta));
+      int absDelta = abs(delta);
+      //      weights[msg.sender] += (2000000 - abs(delta));
+      weights[msg.sender] += -1 * (absDelta / 1000) * (absDelta / 1000) + 2000000;
     }
 
     // Ignore everything if the robots sensor is bad

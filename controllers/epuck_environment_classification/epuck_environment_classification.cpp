@@ -124,6 +124,9 @@ void EPuck_Environment_Classification::Init(TConfigurationNode& t_node) {
     simulationParams.percentRed = simulationParams.percentBlue;
   simulationParams.percentRed = simulationParams.percentRed / 100;
 
+  string allVotesFile = "allVotes.txt";
+  votesFile.open(allVotesFile.c_str(), std::ios_base::trunc | std::ios_base::out);
+  
 }
 
 // Decide which robot runs on which cluster node
@@ -356,6 +359,10 @@ void EPuck_Environment_Classification::Explore() {
     m_sStateData.State = SStateData::STATE_DIFFUSING;
 
     uint opinionInt = (uint) (opinion.quality * 10000000); // Convert opinion quality to a value between 0 and 10000000
+
+    if (votesFile.is_open()) {
+      votesFile << opinionInt << endl;
+    }
     
     string args[0] = {};
     smartContractInterfaceStringBg(robotId, interface, contractAddress, "vote", args, 0, opinionInt, nodeInt, simulationParams.blockchainPath);
