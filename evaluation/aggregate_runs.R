@@ -1,14 +1,11 @@
 source("myplothelpers.R")
 
-## How to use this script:
-##
+## April 2018
+## Volker Strobel
+## This script creates the plots for the ANTS 2018 paper
 
-
-## The latest folder is:
-## 
-
-difficulties <- c(34, 36, 38, 40, 42, 44, 46, 48)
-thresholds <- c(240000, 220000, 200000, 180000, 160000, 140000, 120000, 100000, 80000, 60000)
+difficulties <- seq(34, 48, 2)
+thresholds <- seq(24 * 10^4, 6 * 10 ^ 4, - 2 * 10^4)
 num.byz <- 0:12
 style <- "blockchain"
 nodes <- 0:1
@@ -18,9 +15,6 @@ do.experiment1 <- TRUE
 dates.bc.exp1 <- c("12-03-2018")
 dates.bc.exp2 <- c("14-03-2018")
 
-dates.bc.exp3 <- c("21-03-2018") ## non-safe
-
-dates.bc.exp3 <- c("29-03-2018", "30-03-2018") ## safe
 
 dates.exp1 <- dates.bc.exp1
 dates.exp2 <- dates.bc.exp2
@@ -31,14 +25,6 @@ data.base <- "~/localestimation/"
 report.dir <- "~/Dropbox/mypapers/ANTS2018/llncs-ants/img/"
 N = 20
 
-dec2node <- function(dec) {
-    if (dec == 1)
-        return(0)
-    if (dec == 2)
-        return(2)
-    if (dec == 3)
-        return(5)
-}
 
 # Experiment 1 (Increasing difficulty)
 create.df.exp1 <- function(max.trials=50) {
@@ -112,17 +98,17 @@ create.df.exp2 <- function(max.trials=30) {
 
 
 ## Experiment 3 (Increasing the number of Byzantine robots)
-create.df.exp3 <- function(max.trials=30, safe=T) {
+create.df.exp3 <- function(dates, max.trials=30, safe=T) {
     d <- 40
     df <- data.frame()
     t <- 140000
-        for (dat in dates.exp3) {
+        for (dat in dates) {
             for (i in 1:max.trials) {
                 for (b in num.byz) {
                     for (node in nodes){
 
                         if (safe) {
-                            trials.name <- sprintf("%s/experiment3-safe-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
+                            trials.name <- sprintf("%s/experiment3-safe-newSC-all-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
                         } else {
                             trials.name <- sprintf("%s/experiment3-node%d-%s/%d/num20_black%d_byz%d_run%d-blockchain.RUN1", data.base, node, dat, t, d, b, i)
                             }
@@ -172,14 +158,25 @@ df$error <- df$actual - df$predicted
 
 df2 <- create.df.exp2() ## Iterate over runs and create big df
 
-df3.safe <- create.df.exp3(safe=T) ## Iterate over runs and create big df
+
+df2$error <- df2$actual - df2$predicted
+df2$absError <- abs(df2$error)
+df2$squaredError <- df2$error * df2$error
+
+
+dates.bc.exp3.nonsecure <- c("21-03-2018") ## non-secure
+dates.bc.exp3.secure <- c("30-03-2018") ## secure
+
+df3.safe <- create.df.exp3(dates=dates.bc.exp3.secure, safe=T) ## Iterate over runs and create big df
+df3.safe <- df3.safe[df3.safe$byz < 10, ]
 df3.safe$error <- df3.safe$actual - df3.safe$predicted
 df3.safe$absError <- abs(df3.safe$error)
 df3.safe$squaredError <- df3.safe$error * df3.safe$error
 df3.safe$consWhite <- df3.safe$predicted < 0.5
 
 
-df3.nonsafe <- create.df.exp3(safe=F) ## Iterate over runs and create big df
+df3.nonsafe <- create.df.exp3(dates=dates.bc.exp3.nonsecure, safe=F) ## Iterate over runs and create big df
+df3.nonsafe <- df3.nonsafe[df3.nonsafe$byz < 10, ]
 df3.nonsafe$error <- df3.nonsafe$actual - df3.nonsafe$predicted
 df3.nonsafe$absError <- abs(df3.nonsafe$error)
 df3.nonsafe$squaredError <- df3.nonsafe$error * df3.nonsafe$error
@@ -188,16 +185,8 @@ df3.nonsafe$consWhite <- df3.nonsafe$predicted < 0.5
 
 
 df$consWhite <- df$predicted < 0.5
-
-
-df2$error <- df2$actual - df2$predicted
-
-
-
 df$absError <- abs(df$error)
 
-df2$absError <- abs(df2$error)
-df2$squaredError <- df2$error * df2$error
 
 df$consWhite <- df$predicted < 0.5
 
@@ -205,7 +194,11 @@ df.agg <- data_summary(df, varname="consWhite", groupnames = c("actual"))
 df.agg2 <- data_summary(df, varname=c("absError"), groupnames = c("actual"))
 df.agg3 <- data_summary(df, varname=c("blockchain_size_kB"), groupnames = c("actual"))
 
-write.csv(df, sprintf("experiment1_%s.csv", style), row.names = FALSE, quote=FALSE)
+write.csv(df, "experiment1_ants2018.csv", row.names = FALSE, quote=FALSE)
+write.csv(df2, "experiment2_ants2018.csv", row.names = FALSE, quote=FALSE)
+write.csv(df3.nonsafe, "experiment3_nonsafe_ants2018.csv", row.names = FALSE, quote=FALSE)
+write.csv(df3.safe, "experiment3_safe_ants2018.csv", row.names = FALSE, quote=FALSE)
+
 
 
 source("myplothelpers.R")
@@ -246,6 +239,8 @@ plot.blockchain.size.gg(df,
                   sprintf("blockchain_size.pdf"),
                   report.dir)  
 
+
+## Experiment 2 
 source("myplothelpers.R")
 plot.blockchain.size.by.tau.gg(df2,
                   xlab=expression("Threshold ("*tau*")"),
@@ -271,25 +266,32 @@ plot.MAE.by.tau.gg(df2,
 
 source("myplothelpers.R")
 plot.MSE.by.tau.gg(df2,
-                  xlab=expression("Threshold ("*tau*")"),
-                  ylab=expression("Mean squared error"),
-                  sprintf("MSE_tau.pdf"),
-                  report.dir)  
+                   xlab=expression("Threshold ("*tau*")"),
+                   ylab=expression("Mean squared error"),
+                   sprintf("MSE_tau.pdf"),
+                   report.dir)  
+
+source("myplothelpers.R")
+plot.cons.by.tau.gg(df2,
+                    xlab=expression("Threshold ("*tau*")"),
+                    ylab=expression("Consensus Time"),
+                    sprintf("exp2-constime.pdf"),
+                    report.dir)  
 
 
 ## Experiment 3 non-safe
 source("myplothelpers.R")
-plot.error.by.byz.gg(df3.nonsafe,
-                  xlab=expression("Number of Byzantines"),
-                  ylab=expression("Error"),
-                  sprintf("error_byz-nonsafe.pdf"),
+plot.MAE.by.byz.gg(df3.nonsafe,
+                  xlab=expression("Number of Byzantine robots (k)"),
+                  ylab=expression("Mean absolute error"),
+                  sprintf("MAE_byz-nonsecure.pdf"),
                   report.dir) 
 
 
 ## Experiment 3 safe
 source("myplothelpers.R")
-plot.error.by.byz.gg(df3.safe,
-                  xlab=expression("Number of Byzantines"),
-                  ylab=expression("Error"),
-                  sprintf("error_byz-safe.pdf"),
+plot.MAE.by.byz.gg(df3.safe,
+                  xlab=expression("Number of Byzantine robots (k)"),
+                  ylab=expression("Mean absolute error"),
+                  sprintf("MAE_byz-secure.pdf"),
                   report.dir) 

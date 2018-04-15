@@ -275,12 +275,42 @@ plot.error.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
         ylab(ylab) +
         xlab(xlab) +
         base_breaks_y(seq(-0.10, 0.05, 0.01)) +
-        base_breaks_x(seq(0, 12, 1))         
+        base_breaks_x(seq(0, 9, 1))         
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
     ggsave(out.name, width=7, height=4)    
 }
+
+
+
+plot.MAE.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=byz, y=absError)) +
+        geom_boxplot(aes(group = byz)) +
+                geom_smooth(method="lm") +
+                geom_abline(slope = 0, lty = 2) + 
+         theme_classic() +
+         theme(axis.text=element_text(size=15, colour="gray25"),
+              axis.title=element_text(size=20, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0.00, 0.08, 0.01)) +
+        base_breaks_x(seq(0, 9, 1))         
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
+    ggsave(out.name, width=7, height=4)    
+}
+
 
 
 
@@ -573,6 +603,32 @@ plot.consensus.time.gg <- function(df, xlab, ylab, out.name, report.dir) {
         
     ggsave(paste0(report.dir, out.name))
     }
+
+plot.cons.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=threshold, y=clock)) +
+    geom_boxplot(aes(group = threshold)) +
+    geom_smooth(method="loess") +
+         theme_classic() +
+         theme(axis.text=element_text(size=15, colour="gray25"),
+              axis.title=element_text(size=20, colour="gray25"),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+        base_breaks_y(seq(0, 1200, 100)) +
+        base_breaks_x(seq(0.006, 0.0240, 0.002))         
+        
+    print(paste0(report.dir, out.name))
+    ggsave(paste0(report.dir, out.name), width=7, height=4)
+}
+
 
 
 ## Plot conensus time
