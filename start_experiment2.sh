@@ -3,23 +3,18 @@ USERNAME=`whoami`
 mailto='volker.strobel87@gmail.com'
 TEMPLATE='experiments/epuck_EC_locale_template.argos'
 OUTFILE="experiments/epuck$1.argos"
-
 SCTEMPLATE='contracts/smart_contract_template.sol'
 SCOUT='contracts/smart_contract_threshold.sol'
-
 BASEDIR="$HOME/Documents/col_estimation/controllers/epuck_environment_classification/"
 BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
 NUMROBOTS=(20)
-THRESHOLDS=(140000) 
+THRESHOLDS=(140000 160000 180000 200000 220000 240000 260000 280000 300000) 
 REPETITIONS=20
 DECISIONRULE=$3
 PERCENT_BLACKS=(40)
-#PERCENT_BLACKS=(34)
-# the one I did all the tests with:
-MININGDIFF=1000000 #was 1000000 before 
-# never go with the difficulty below 131072! (see https://github.com/ethereum/go-ethereum/issues/3590)
+MININGDIFF=1000000
 USEMULTIPLENODES=true
 USEBACKGROUNDGETHCALLS=true
 MAPPINGPATH="$HOME/Documents/col_estimation/experiments/config$1.txt"
@@ -31,13 +26,13 @@ USEDNODES=($1 $2)
 echo "USEDNODES is ${USEDNODES}"
 BASEPORT=$((33000 + $1 * 200))
 echo "BASEPORT is ${BASEPORT}"
-DATADIRBASE="data/experiment2-node$1-${NOW}/"
+DATADIRBASE="data/experiment1_decision${DECISIONRULE}-node$1-${NOW}/"
 REGENERATEFILE="$(pwd)/regenerate${USEDNODES[0]}.sh"
 # The miner node is the first of the used nodes
 MINERNODE=${USEDNODES[0]}
 USECLASSICALAPPROACH=false
-NUMBYZANTINE=(0 1 2 3 4 5 6 7 8 9 10 11 12)
-BYZANTINESWARMSTYLE=1
+NUMBYZANTINE=(0)
+BYZANTINESWARMSTYLE=0
 SUBSWARMCONSENSUS=false # Determines if all N robots have to agree or
 		       # only the beneficial subswarm.
 
