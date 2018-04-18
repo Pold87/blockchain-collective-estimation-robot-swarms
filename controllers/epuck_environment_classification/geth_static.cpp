@@ -8,15 +8,11 @@
 #include <fstream>
 #include <limits>
 #include <algorithm>
-
 #include <time.h>
 #include <sys/time.h>
-
-
 #include "geth_static.h"
 
 #define DEBUG true
-#define USE_MULTIPLE_NODES true
 
 using namespace std;
 
@@ -56,7 +52,7 @@ uint Id2Int(std::string id) {
   if(id[3]!='\0')
     idConversion = (idConversion * 10) + (id[3] - '0');
 
-    return idConversion;
+  return idConversion;
 }
 
 std::string removeSpace(std::string str) {
@@ -65,40 +61,40 @@ std::string removeSpace(std::string str) {
 	  
   noSpace.erase(std::remove(noSpace.begin(), 
 			    noSpace.end(), '\n'),
-		       noSpace.end());
+		noSpace.end());
 
   return noSpace;
 }
 
 /* Replace the pattern from with to in the string str  */
 bool replace(std::string& str, const std::string& from, const std::string& to) {
-    size_t start_pos = str.find(from);
-    if(start_pos == std::string::npos)
-        return false;
-    str.replace(start_pos, from.length(), to);
-    return true;
+  size_t start_pos = str.find(from);
+  if(start_pos == std::string::npos)
+    return false;
+  str.replace(start_pos, from.length(), to);
+  return true;
 }
 
 /* Replace all occurrences of search with replace and return new string */
 
 string replaceAll(std::string subject, const std::string& search,
-                          const std::string& replace) {
-    size_t pos = 0;
-    while ((pos = subject.find(search, pos)) != std::string::npos) {
-         subject.replace(pos, search.length(), replace);
-         pos += replace.length();
-    }
-    return subject;
+		  const std::string& replace) {
+  size_t pos = 0;
+  while ((pos = subject.find(search, pos)) != std::string::npos) {
+    subject.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+  return subject;
 }
 
 
 void ReplaceStringInPlace(std::string& subject, const std::string& search,
                           const std::string& replace) {
-    size_t pos = 0;
-    while ((pos = subject.find(search, pos)) != std::string::npos) {
-         subject.replace(pos, search.length(), replace);
-         pos += replace.length();
-    }
+  size_t pos = 0;
+  while ((pos = subject.find(search, pos)) != std::string::npos) {
+    subject.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
 }
 
 /* Reads the first line from a file */
@@ -114,21 +110,21 @@ string readStringFromFile(string fileName){
 
 /* Execute command line program and return string result */
 std::string exec(const char* cmd) {
-    char buffer[128];
-    std::string result = "";
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    try {
-        while (!feof(pipe)) {
-            if (fgets(buffer, 128, pipe) != NULL)
-                result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
+  char buffer[128];
+  std::string result = "";
+  FILE* pipe = popen(cmd, "r");
+  if (!pipe) throw std::runtime_error("popen() failed!");
+  try {
+    while (!feof(pipe)) {
+      if (fgets(buffer, 128, pipe) != NULL)
+	result += buffer;
     }
+  } catch (...) {
     pclose(pipe);
-    return result;
+    throw;
+  }
+  pclose(pipe);
+  return result;
 }
 
 
@@ -221,7 +217,7 @@ string exec_geth_cmd_helper(int i, string command, int nodeInt, string datadirBa
   
   std::string fullCommand = fullCommandStream.str();
 
-  cout << "Command in helper is: " << fullCommand << endl;
+  //cout << "Command in helper is: " << fullCommand << endl;
   
   string res = exec(fullCommand.c_str());
 
@@ -330,18 +326,18 @@ void exec_geth_cmd_background(int i, string command, int nodeInt, string datadir
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
-    std::stringstream ss;
-    ss.str(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        *(result++) = item;
-    }
+  std::stringstream ss;
+  ss.str(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    *(result++) = item;
+  }
 }
 
 std::vector<std::string> split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, std::back_inserter(elems));
-    return elems;
+  std::vector<std::string> elems;
+  split(s, delim, std::back_inserter(elems));
+  return elems;
 }
 
 
@@ -526,8 +522,8 @@ std::string getCoinbase(int i, int nodeInt, int basePort, string datadirBase){
   string cmd = fullCommandStream.str();
   string res = exec_geth_cmd_with_geth_restart(i, cmd, nodeInt, basePort, datadirBase);
 
-    if (DEBUG)
-      cout << "DEBUG  -- getCoinbase " << "(robot " << i << "): " << res << endl;
+  if (DEBUG)
+    cout << "DEBUG  -- getCoinbase " << "(robot " << i << "): " << res << endl;
   
   return res;
 }
@@ -646,13 +642,13 @@ std::string smartContractInterface(int i, string interface, string contractAddre
   fullCommandStream << "{" << "value: " << v << ", from: eth.coinbase, gas: '3000000'});";
   
   
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
-   cout << "Result received from SC is: " << res << endl;
+  string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+  cout << "Result received from SC is: " << res << endl;
 
-   return res; 
- }
+  return res; 
+}
 
 
 /* Interact with the 'strategyApplied' event */
@@ -661,12 +657,12 @@ std::string eventInterface(int i, std::string interface, std::string contractAdd
   ostringstream fullCommandStream;
   fullCommandStream << "var cC = web3.eth.contract(" << interface << ");var c = cC.at(" << contractAddress << ");var ev = c.strategyApplied({sender:eth.coinbase},{fromBlock: 0, toBlock: \"latest\"});var allStratEvents = ev.get();allStratEvents[allStratEvents.length - 1].args;console.log(allStratEvents[allStratEvents.length - 1].args.blockHash, allStratEvents[allStratEvents.length - 1].args.blockNumber, allStratEvents[allStratEvents.length - 1].args.opinion);";
 
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
-   cout << "Result received from EVENT is: " << res << endl;
+  string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+  cout << "Result received from EVENT is: " << res << endl;
 
-   return res; 
+  return res; 
   
 }
 
@@ -677,12 +673,12 @@ std::string eventInterfaceConsensus(int i, std::string interface, std::string co
   ostringstream fullCommandStream;
   fullCommandStream << "var cC = web3.eth.contract(" << interface << ");var c = cC.at(" << contractAddress << ");var ev = c.consensusReached({fromBlock: 0, toBlock: \"latest\"});var allStratEvents = ev.get();allStratEvents[allStratEvents.length - 1].args;console.log(allStratEvents[allStratEvents.length - 1].args.c);";
 
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
-   cout << "Result received from EVENT is: " << res << endl;
+  string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+  cout << "Result received from EVENT is: " << res << endl;
 
-   return res; 
+  return res; 
   
 }
 
@@ -691,7 +687,7 @@ std::string eventInterfaceConsensus(int i, std::string interface, std::string co
 // Interact with a function of a smart contract
 // v: Amount of wei to send
 std::string smartContractInterfaceCall(int i, string interface, string contractAddress,
-				   string func, int args[], int argc, int v, int nodeInt, string datadirBase) {
+				       string func, int args[], int argc, int v, int nodeInt, string datadirBase) {
   
   
   ostringstream fullCommandStream;
@@ -706,13 +702,13 @@ std::string smartContractInterfaceCall(int i, string interface, string contractA
   fullCommandStream << "{" << "value: " << v << ", from: eth.coinbase, gas: '3000000'});";
   
   
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
-   cout << "Result received from SC is: " << res << endl;
+  string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+  cout << "Result received from SC is: " << res << endl;
 
-   return res;
- }
+  return res;
+}
 
 
 std::string smartContractInterfaceStringCall(int i, std::string interface, std::string contractAddress, std::string func, std::string args[], int argc, int v, int nodeInt, std::string datadirBase) {
@@ -730,12 +726,12 @@ std::string smartContractInterfaceStringCall(int i, std::string interface, std::
   fullCommandStream << "{" << "value: " << v << ", from: eth.coinbase, gas: '3000000'});";
   
   
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
-   cout << "Result received from SC is: " << res << endl;
+  string res = exec_geth_cmd(i, fullCommand, nodeInt, datadirBase);
+  cout << "Result received from SC is: " << res << endl;
 
-   return res;
+  return res;
   
 }
 
@@ -743,7 +739,7 @@ std::string smartContractInterfaceStringCall(int i, std::string interface, std::
 // Interact with a function of a smart contract
 // v: Amount of wei to send
 void smartContractInterfaceBg(int i, string interface, string contractAddress,
-				   string func, int args[], int argc, int v, int nodeInt, string datadirBase) {
+			      string func, int args[], int argc, int v, int nodeInt, string datadirBase) {
   
   
   ostringstream fullCommandStream;
@@ -758,18 +754,18 @@ void smartContractInterfaceBg(int i, string interface, string contractAddress,
   fullCommandStream << "{" << "value: " << v << ", from: eth.coinbase, gas: '3000000'});";
   
   
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   exec_geth_cmd_background(i, fullCommand, nodeInt, datadirBase);
-   //cout << "Result received from SC is: " << res << endl;
+  exec_geth_cmd_background(i, fullCommand, nodeInt, datadirBase);
+  //cout << "Result received from SC is: " << res << endl;
 
- }
+}
 
 
 // Interact with a function of a smart contract
 // v: Amount of wei to send
 void smartContractInterfaceStringBg(int i, string interface, string contractAddress,
-				   string func, string args[], int argc, int v, int nodeInt, string datadirBase) {
+				    string func, string args[], int argc, int v, int nodeInt, string datadirBase) {
   
   
   ostringstream fullCommandStream;
@@ -784,14 +780,14 @@ void smartContractInterfaceStringBg(int i, string interface, string contractAddr
   fullCommandStream << "{" << "value: " << v << ", from: eth.coinbase, gas: '3000000'});";
   
   
-   std::string fullCommand = fullCommandStream.str();
+  std::string fullCommand = fullCommandStream.str();
 
-   //cout << "Executing full command: " << fullCommand << endl;
+  //cout << "Executing full command: " << fullCommand << endl;
 
-   exec_geth_cmd_background(i, fullCommand, nodeInt, datadirBase);
-   //cout << "Result received from SC is: " << res << endl;
+  exec_geth_cmd_background(i, fullCommand, nodeInt, datadirBase);
+  //cout << "Result received from SC is: " << res << endl;
 
- }
+}
 
 
 /* Deploy contract using robot number i and return the transaction hash */
@@ -829,9 +825,9 @@ std::string deploy_contract(int i, string interfacePath, string dataPath, string
 
     /* If a transaction hash was generated, i.e., neither true nor false nor Error were found */
     if (txHash.find("true") == string::npos && txHash.find("false") == string::npos && txHash.find("Error") == string::npos && txHash.find("Fatal") == string::npos) {
-	return txHash;
-      }
-    }  
+      return txHash;
+    }
+  }  
 
   /* If the maximum number of trials is reached */
   cout << "Maximum number of trials is reached!" << endl;

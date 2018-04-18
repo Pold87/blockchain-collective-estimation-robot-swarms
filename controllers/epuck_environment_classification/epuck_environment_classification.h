@@ -221,6 +221,7 @@ private:
    std::string rawTx;
    std::set<int> neighbors;
    std::string enode;
+   std::ofstream votesFile;
 
    std::string blockchainPath;
    blockWithHash bwh;

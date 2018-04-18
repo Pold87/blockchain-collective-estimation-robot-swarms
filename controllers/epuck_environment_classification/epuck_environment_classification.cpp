@@ -124,22 +124,25 @@ void EPuck_Environment_Classification::Init(TConfigurationNode& t_node) {
     simulationParams.percentRed = simulationParams.percentBlue;
   simulationParams.percentRed = simulationParams.percentRed / 100;
 
+  string allVotesFile = "allVotes.txt";
+  votesFile.open(allVotesFile.c_str(), std::ios_base::trunc | std::ios_base::out);
+  
 }
 
 // Decide which robot runs on which cluster node
 void EPuck_Environment_Classification::readNodeMapping() {
 
- int r_id;
- int r_node;
+  int r_id;
+  int r_node;
 
- ifstream infile;
+  ifstream infile;
 
- infile.open(simulationParams.mappingPath.c_str());
+  infile.open(simulationParams.mappingPath.c_str());
  
- while (infile >> r_id >> r_node)
-   robotIdToNode[r_id] = r_node;
+  while (infile >> r_id >> r_node)
+    robotIdToNode[r_id] = r_node;
 
- infile.close();  
+  infile.close();  
 }
 
 
@@ -338,9 +341,15 @@ void EPuck_Environment_Classification::Explore() {
   else{
 
 
+    /* If this robot is a Byzantine robot, it always uses quality estimate 1.0 */
     if (byzantineStyle == 1) {
-      //opinion.quality = m_pcRNG->Uniform(CRange<Real>(0.0,1.0));
       opinion.quality = 1.0;
+
+      /* If this robot is a Byzantine robot, its quality estimate is
+	 drawn from a value between 0.0 and 1.0 */
+    } else if (byzantineStyle == 2) {
+      opinion.quality = m_pcRNG->Uniform(CRange<Real>(0.0,1.0));
+      
     } else {
       opinion.quality = (Real)((Real)(opinion.countedCellOfActualOpinion)/(Real)(collectedData.count));    
     }
@@ -349,8 +358,11 @@ void EPuck_Environment_Classification::Explore() {
     collectedData.count = 0;
     m_sStateData.State = SStateData::STATE_DIFFUSING;
 
-
     uint opinionInt = (uint) (opinion.quality * 10000000); // Convert opinion quality to a value between 0 and 10000000
+
+    if (votesFile.is_open()) {
+      votesFile << opinionInt << endl;
+    }
     
     string args[0] = {};
     smartContractInterfaceStringBg(robotId, interface, contractAddress, "vote", args, 0, opinionInt, nodeInt, simulationParams.blockchainPath);
@@ -376,14 +388,14 @@ void EPuck_Environment_Classification::WaitForDecision() {
   eventResult = eventInterfaceConsensus(robotId, interface, contractAddress, nodeInt, simulationParams.blockchainPath);	
 
   if (eventResult.find("Error") == string::npos) {
-	vector<string> splitResult = split(eventResult, ' ');    
-	std::string s_consensusReached = splitResult[0];      
-	cout << "consensusReached is " << s_consensusReached << endl;
-	if (atoi(s_consensusReached.c_str()) == 2) {
-	  consensusReached = true;
-	} else {
-	  cout << "consensusReached Epuck is " << consensusReached << endl;
-	}
+    vector<string> splitResult = split(eventResult, ' ');    
+    std::string s_consensusReached = splitResult[0];      
+    cout << "consensusReached is " << s_consensusReached << endl;
+    if (atoi(s_consensusReached.c_str()) == 2) {
+      consensusReached = true;
+    } else {
+      cout << "consensusReached Epuck is " << consensusReached << endl;
+    }
   }
   threadCurrentlyRunning = false;
 }
@@ -407,11 +419,11 @@ void EPuck_Environment_Classification::ConnectAndListen() {
 void EPuck_Environment_Classification::Diffusing() {
 
   /* Query consensous reached */
-    if (!threadCurrentlyRunning){
-      threadCurrentlyRunning = true;
-      thread t1(&EPuck_Environment_Classification::WaitForDecision, this);
-      t1.detach();
-    }
+  if (!threadCurrentlyRunning){
+    threadCurrentlyRunning = true;
+    thread t1(&EPuck_Environment_Classification::WaitForDecision, this);
+    t1.detach();
+  }
   
   /* Change to EXPLORING state and choose another opinion with decision rules */
   m_sStateData.State = SStateData::STATE_EXPLORING;

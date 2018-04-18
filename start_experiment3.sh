@@ -3,18 +3,21 @@ USERNAME=`whoami`
 mailto='volker.strobel87@gmail.com'
 TEMPLATE='experiments/epuck_EC_locale_template.argos'
 OUTFILE="experiments/epuck$1.argos"
-SCTEMPLATE='contracts/smart_contract_template.sol'
+SCTEMPLATESECURE='contracts/smart_contract_byzantine_template.sol'
+SCTEMPLATENONSECURE='contracts/smart_contract_template.sol'
 SCOUT='contracts/smart_contract_threshold.sol'
 BASEDIR="$HOME/Documents/col_estimation/controllers/epuck_environment_classification/"
 BLOCKCHAINPATH="$HOME/eth_data_para$1/data" # always without '/' at the end!!
 MINERID=$(expr 120 + $1)
 echo "MINERID is ${MINERID}"
 NUMROBOTS=(20)
-THRESHOLDS=(80000 60000 220000 240000) 
+THRESHOLDS=(140000) 
 REPETITIONS=20
 DECISIONRULE=$3
 PERCENT_BLACKS=(40)
-MININGDIFF=1000000
+# the one I did all the tests with:
+MININGDIFF=1000000 #was 1000000 before 
+# never go with the difficulty below 131072! (see https://github.com/ethereum/go-ethereum/issues/3590)
 USEMULTIPLENODES=true
 USEBACKGROUNDGETHCALLS=true
 MAPPINGPATH="$HOME/Documents/col_estimation/experiments/config$1.txt"
@@ -26,13 +29,13 @@ USEDNODES=($1 $2)
 echo "USEDNODES is ${USEDNODES}"
 BASEPORT=$((33000 + $1 * 200))
 echo "BASEPORT is ${BASEPORT}"
-DATADIRBASE="data/experiment1_decision${DECISIONRULE}-node$1-${NOW}/"
+DATADIRBASE="data/experiment3-secure$3-vote-node$1-${NOW}/"
 REGENERATEFILE="$(pwd)/regenerate${USEDNODES[0]}.sh"
 # The miner node is the first of the used nodes
 MINERNODE=${USEDNODES[0]}
 USECLASSICALAPPROACH=false
-NUMBYZANTINE=(0)
-BYZANTINESWARMSTYLE=0
+NUMBYZANTINE=(0 1 2 3 4 5 6 7 8 9)
+BYZANTINESWARMSTYLE=1
 SUBSWARMCONSENSUS=false # Determines if all N robots have to agree or
 		       # only the beneficial subswarm.
 
@@ -41,6 +44,21 @@ if [ "$USECLASSICALAPPROACH" == "true" ]; then
     REALTIME="false"
 else
     REALTIME="true"
+fi
+
+
+if [ "$DECISIONRULE" == 0 ]; then
+    SCTEMPLATE=${SCTEMPLATENONSECURE}
+    echo "Non-secure approach"
+else
+    SCTEMPLATE=${SCTEMPLATESECURE}
+    echo "Secure approach"
+fi
+
+if [ $4 == 0 ]; then
+    NUMBYZANTINE=(0 1 2 3 4 5 6 7 8 9)
+else
+    NUMBYZANTINE=(9 8 7 6 5 4 3 2 1 0)
 fi
 
  # Rebuild geth with another value in checkDifficulty
@@ -101,8 +119,8 @@ fi
 	# Create and compile smart contract
 	sed -e "s|THRESHOLD|$THRESHOLD|g" $SCTEMPLATE > $SCOUT
 	solc --overwrite --abi --bin -o . $SCOUT
-	cp Estimation.bin "${BASEDIR}/data.txt"
-	cp Estimation.abi "${BASEDIR}/interface.txt"	      
+	cp Estimation.bin "${BASEDIR}/data$1.txt"
+	cp Estimation.abi "${BASEDIR}/interface$1.txt"	      
 	
 	# Create template
 	sed -e "s|BASEDIR|$BASEDIR|g" -e "s|NUMRUNS|$NUMRUNS|g" -e "s|DATADIR|$DATADIR|g" -e "s|RADIX|$RADIX|g" -e "s|NUMROBOTS|$k|g" -e "s|R0|$R0|g" -e "s|B0|$B0|g" -e "s|PERCENT_BLACK|$PERCENT_BLACK|g" -e "s|PERCENT_WHITE|$PERCENT_WHITE|g" -e "s|DECISIONRULE|$DECISIONRULE|g" -e "s|USEMULTIPLENODES|$USEMULTIPLENODES|g" -e "s|MININGDIFF|$MININGDIFF|g" -e "s|MINERNODE|$MINERNODE|g" -e "s|MINERID|$MINERID|g" -e "s|BASEPORT|$BASEPORT|g" -e "s|USEBACKGROUNDGETHCALLS|$USEBACKGROUNDGETHCALLS|g" -e "s|BLOCKCHAINPATH|$BLOCKCHAINPATH|g" -e "s|MAPPINGPATH|$MAPPINGPATH|g" -e "s|THREADS|$THREADS|g" -e "s|USECLASSICALAPPROACH|$USECLASSICALAPPROACH|g" -e "s|NUMBYZANTINE|$y|g" -e "s|BYZANTINESWARMSTYLE|$BYZANTINESWARMSTYLE|g" -e "s|SUBSWARMCONSENSUS|$SUBSWARMCONSENSUS|g" -e "s|REGENERATEFILE|$REGENERATEFILE|g" -e "s|REALTIME|$REALTIME|g" $TEMPLATE > $OUTFILE
@@ -114,8 +132,6 @@ fi
 	    
 	    # Clean up
 	    bash "${BLOCKCHAINPATH}/bckillerccall"
-	    #mkdir -p "${DATADIR}${p}-${i}"
-	    #mv "${BLOCKCHAINPATH}"* "${DATADIR}${p}-${i}"
 	    rm -rf "${BLOCKCHAINPATH}"*
 	    rm $REGENERATEFILE
 	    
