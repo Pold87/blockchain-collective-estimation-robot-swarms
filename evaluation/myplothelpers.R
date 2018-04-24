@@ -3,6 +3,12 @@ library(ggthemes)
 #library(directlabels)
 library(grid)
 
+interleave <- function(x,y){
+  lx <- length(x)
+  ly <- length(y)
+  n <- max(lx,ly)
+  as.vector(rbind(rep(x, length.out=n), rep(y, length.out=n)))
+}
 
 strat2strat.name <- function(strat){
 
@@ -23,6 +29,17 @@ base_breaks_x <- function(x){
        scale_x_continuous(breaks=b))
 }
 
+# Hardcoded!
+base_breaks_x_interleave<- function(x){
+    b <- x
+    my.labs <- c("0.006", "", "0.010", "", "0.014", "", "0.018", "", "0.022", "", "0.026",
+                 "", "0.030")
+  d <- data.frame(y=-Inf, yend=-Inf, x=min(b), xend=max(b))
+  list(geom_segment(data=d, size=1.3, colour="gray35", aes(x=x, y=y, xend=xend, yend=yend), inherit.aes=FALSE),
+       scale_x_continuous(breaks=b, labels=my.labs))
+}
+
+
 base_breaks_x_discrete<- function(x){
   b <- x
   d <- data.frame(y=-Inf, yend=-Inf, x=min(b), xend=max(b))
@@ -42,68 +59,14 @@ base_breaks_y <- function(x){
 ## Plot function
 
 ## Plot exit probability 
-plot.exit.prob <- function(x, y, xlab, ylab, out.name) {
+plot.exit.prob.gg2 <- function(df, xlab, ylab, out.name, report.dir) {
 
-pdf(paste0(report.dir, out.name))
-par(cex.lab = 1.7, las=1, cex.axis=1.7, mar=c(9,6,4,2), lwd=3, font.axis=2, font.lab=2, font=2)
-p <- plot(x, y,
-     xlab=xlab, ylab=ylab,
-     pch=3, col=tol4qualitative[1], type="b", ylim=c(0, 1), font.lab=2, cex=2,
-     lty=2)
-abline(h =1, untf = FALSE, lty=2)
-abline(h =0, untf = FALSE, lty=2)
-legend(x="bottomright", legend=c("BC strategy"),
-       col=tol4qualitative[1:1],
-       pch=2:2,
-       lty=2:2,
-       cex=2,
-       bty="n")
-dev.off() 
-}
-
-
-
-plot.exit.prob.gg.facet <- function(df, xlab, ylab, out.name, report.dir) {
-
-    print(df)
-    df[, 'strat.names'] <- as.factor(df[, 'strat.names'])
-    df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
-    p <- ggplot(transform(df, strat.names=factor(strat.names, level=c("DMVD", "DMMD", "DC"))), aes(x=difficulty, y=E.Ns, group=strat.names)) +
-        facet_wrap(~strat.names) +
-        geom_bar(aes(fill = strat.names, color=strat.names), stat="identity", width = 0.5) +
-        theme_classic() +
-        theme(axis.text=element_text(size=9, colour="gray25"),
-              axis.title=element_text(size=14, colour="gray25"),
-              axis.line = element_blank(),              
-              axis.ticks.length=unit(-0.25, "cm"),
-              axis.ticks = element_line(colour = 'gray25'),
-              panel.spacing.x=unit(.8, "lines"),
-              legend.position="none",
-              strip.background = element_rect(size = 1.3),
-              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
-                                         angle = 45, vjust = 1, hjust=1),
-              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
-        ylab(ylab) +
-        xlab(xlab) +
-        #coord_cartesian(xlim=c(min(df$difficulty), max(df$difficulty))) + 
-                                        #base_breaks_x(seq(0.5, 1.0, 0.10)) +
-                                        #base_breaks_x(seq(0.5, 1.0, 0.10)) +
-        #base_breaks_x_discrete(c(0.52, 0.56, 0.61, 0.67, 0.72, 0.79, 0.85, 0.92)) +
-        base_breaks_y(seq(0.0, 1, 0.1))
-        
-    #expand_limits(x = 1.05)
-
-    print(paste0(report.dir, out.name))
-    ggsave(paste0(report.dir, out.name), width=7, height=4)
-}
-
-plot.exit.prob.gg1 <- function(df, xlab, ylab, out.name, report.dir) {
-
-    p <- ggplot(df, aes(x=actual, y=consWhite)) +
-        geom_bar(stat="identity", color="black", fill="white", width = 0.015) +
+    p <- ggplot(df, aes(x=actual, y=as.numeric(consWhite))) +
+        geom_bar(stat = "summary", fun.y = "mean", color="black", fill="white", width = 0.015) +
         theme_classic() +
         theme(axis.text=element_text(size=15, colour="gray25"),
               axis.title=element_text(size=20, colour="gray25"),
+              axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -116,20 +79,23 @@ plot.exit.prob.gg1 <- function(df, xlab, ylab, out.name, report.dir) {
         ylab(ylab) +
         xlab(xlab) +
         base_breaks_x(seq(0.34, 0.48, 0.02)) +
-        base_breaks_y(seq(0.0, 1, 0.1))
-        
+        base_breaks_y(seq(0.0, 1, 0.5))
+
+    out.name <- paste0(report.dir, out.name)
     ggsave(out.name, width=7, height=4)
 }
+
 
 
 plot.abs.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
 
     p <- ggplot(df, aes(x=actual, y=absError)) +
         geom_bar(stat="summary", fun.y="mean", width = 0.015, color="black", fill="white") +
-        geom_smooth(method="lm") + 
+        geom_smooth(method="loess") + 
         theme_classic() +
         theme(axis.text=element_text(size=15, colour="gray25"),
               axis.title=element_text(size=20, colour="gray25"),
+              axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -142,8 +108,9 @@ plot.abs.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
         ylab(ylab) +
         xlab(xlab) +
         base_breaks_x(seq(0.34, 0.48, 0.02)) +
-        base_breaks_y(seq(0.0, 0.02, 0.005))
-        
+        base_breaks_y(seq(0.0, 0.015, 0.005))
+
+    out.name <- paste0(report.dir, out.name)
     ggsave(out.name, width=7, height=4)
 }
 
@@ -152,11 +119,12 @@ plot.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
     df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
     p <- ggplot(df, aes(x=actual, y=predicted)) +
         geom_boxplot(aes(group = actual)) +
-        geom_smooth(method="lm") +
+        geom_smooth(method="loess") +
         geom_abline(lty = 2) + 
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -170,39 +138,15 @@ plot.error.gg <- function(df, xlab, ylab, out.name, report.dir) {
         xlab(xlab) +
         base_breaks_y(seq(0.32, 0.48, 0.02)) +
         base_breaks_x(seq(0.32, 0.48, 0.02)) 
-        
-    print(paste0(report.dir, out.name))
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
     ggsave(out.name, width=7, height=4)    
 }
 
 plot.blockchain.size.gg <- function(df, xlab, ylab, out.name, report.dir) {
-    p <- ggplot(df, aes(x=actual, y=blockchain_size_kB)) +
+    p <- ggplot(df, aes(x=actual, y=blockchain_size_KB / 1000)) +
         geom_boxplot(aes(group = actual)) +
-        geom_smooth(method="lm") +
-         theme_classic() +
-         theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
-              axis.line = element_blank(),              
-              axis.ticks.length=unit(-0.25, "cm"),
-              axis.ticks = element_line(colour = 'gray25'),
-              panel.spacing.x=unit(.8, "lines"),
-              legend.position="none",
-              strip.background = element_rect(size = 1.3),
-              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
-                                         angle = 45, vjust = 1, hjust=1),
-              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
-        ylab(ylab) +
-        xlab(xlab) +
-        base_breaks_y(seq(0, 5000, 500)) +
-        base_breaks_x(seq(0.34, 0.48, 0.02)) 
-        
-    print(paste0(report.dir, out.name))
-    ggsave(out.name, width=7, height=4)    
-}
-
-plot.blockchain.size.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
-    p <- ggplot(df, aes(x=threshold, y=(blockchain_size_KB / 1000))) +
-        geom_boxplot(aes(group = threshold)) +
         geom_smooth(method="loess") +
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
@@ -218,8 +162,35 @@ plot.blockchain.size.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir)
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
+        base_breaks_y(seq(0, 5, 1)) +
+        base_breaks_x(seq(0.34, 0.48, 0.02)) 
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
+    ggsave(out.name, width=7, height=4)    
+}
+
+plot.blockchain.size.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=threshold, y=(blockchain_size_KB / 1000))) +
+        geom_boxplot(aes(group = threshold)) +
+        geom_smooth(method="loess") +
+         theme_classic() +
+         theme(axis.text=element_text(size=15, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
         base_breaks_y(seq(0, 8, 1)) +
-        base_breaks_x(seq(0.006, 0.0240, 0.002)) 
+        base_breaks_x_interleave(seq(0.006, 0.0300, 0.002)) 
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
@@ -230,7 +201,7 @@ plot.blockchain.size.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir)
 plot.error.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=threshold, y=error)) +
         geom_boxplot(aes(group = threshold)) +
-                geom_smooth(method="lm") +
+                geom_smooth(method="loess") +
                 geom_abline(slope = 0, lty = 2) + 
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
@@ -247,7 +218,7 @@ plot.error.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
         ylab(ylab) +
         xlab(xlab) +
         base_breaks_y(seq(-0.05, 0.05, 0.01)) +
-        base_breaks_x(seq(0.006, 0.0240, 0.002))         
+        base_breaks_x_interleave(seq(0.006, 0.0300, 0.002)) 
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
@@ -258,7 +229,7 @@ plot.error.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
 plot.error.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=byz, y=error)) +
         geom_boxplot(aes(group = byz)) +
-                geom_smooth(method="lm") +
+                geom_smooth(method="loess") +
                 geom_abline(slope = 0, lty = 2) + 
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
@@ -288,23 +259,24 @@ plot.MAE.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=byz, y=absError)) +
         geom_boxplot(aes(group = byz)) +
                 geom_smooth(method="loess") +
-                geom_abline(slope = 0, lty = 2) + 
+#                geom_abline(slope = 0, lty = 2) + 
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
               panel.spacing.x=unit(.8, "lines"),
               legend.position="none",
               strip.background = element_rect(size = 1.3),
-              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
-                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        base_breaks_y(seq(0.00, 0.35, 0.05)) +
-        base_breaks_x(seq(0, 9, 1))         
+        base_breaks_y(seq(0.00, 0.40, 0.05)) +
+    base_breaks_x(seq(0, 9, 1)) +
+    expand_limits(y = -0.02)
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
@@ -317,10 +289,11 @@ plot.MAE.by.byz.gg <- function(df, xlab, ylab, out.name, report.dir) {
 plot.MAE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=threshold, y=absError)) +
         geom_boxplot(aes(group = threshold)) +
-                geom_smooth(method="lm") +
+                geom_smooth(method="loess") +
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),               
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -332,8 +305,8 @@ plot.MAE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        base_breaks_y(seq(0.00, 0.10, 0.01)) +
-        base_breaks_x(seq(0.006, 0.0240, 0.002))         
+        base_breaks_y(seq(0.00, 0.08, 0.02)) +
+        base_breaks_x_interleave(seq(0.006, 0.0300, 0.002)) 
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
@@ -341,10 +314,41 @@ plot.MAE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
 }
 
 
+plot.MAE.by.rho.gg <- function(df, xlab, ylab, out.name, report.dir) {
+    p <- ggplot(df, aes(x=actual, y=absError)) +
+        geom_boxplot(aes(group = actual)) +
+                geom_smooth(method="loess") +
+         theme_classic() +
+         theme(axis.text=element_text(size=15, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),               
+              axis.line = element_blank(),              
+              axis.ticks.length=unit(-0.25, "cm"),
+              axis.ticks = element_line(colour = 'gray25'),
+              panel.spacing.x=unit(.8, "lines"),
+              legend.position="none",
+              strip.background = element_rect(size = 1.3),
+              axis.text.x = element_text(margin=unit(c(0.3,0.3,0.3,0.3), "cm"),
+                                         angle = 45, vjust = 1, hjust=1),
+              axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
+        ylab(ylab) +
+        xlab(xlab) +
+
+    base_breaks_x(seq(0.34, 0.48, 0.02)) +
+    base_breaks_y(seq(0.0, 0.040, 0.010))
+
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
+    ggsave(out.name, width=7, height=4)    
+}
+
+
+
 plot.MSE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
     p <- ggplot(df, aes(x=threshold, y=squaredError)) +
         geom_boxplot(aes(group = threshold)) +
-                geom_smooth(method="lm") +
+                geom_smooth(method="loess") +
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
               axis.title=element_text(size=20, colour="gray25"),
@@ -360,7 +364,7 @@ plot.MSE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
         ylab(ylab) +
         xlab(xlab) +
         base_breaks_y(seq(0.00, 0.004, 0.0005)) +
-        base_breaks_x(seq(0.006, 0.0240, 0.002))         
+        base_breaks_x_interleave(seq(0.006, 0.0300, 0.002)) 
 
     out.name <- paste0(report.dir, out.name)
     print(out.name)
@@ -370,14 +374,16 @@ plot.MSE.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
 
 
 
+
 plot.cons.gg <- function(df, xlab, ylab, out.name, report.dir) {
     df[, 'difficulty'] <- as.factor(df[, 'difficulty'])
     p <- ggplot(df, aes(x=actual, y=clock)) +
     geom_boxplot(aes(group = actual)) +
-    geom_smooth(method="lm") +
+    geom_smooth(method="loess") +
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -389,10 +395,11 @@ plot.cons.gg <- function(df, xlab, ylab, out.name, report.dir) {
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        base_breaks_y(seq(0, 600, 100)) +
+        base_breaks_y(seq(0, 500, 100)) +
         base_breaks_x(seq(0.34, 0.48, 0.02)) 
-        
-    print(paste0(report.dir, out.name))
+
+    out.name <- paste0(report.dir, out.name)
+    print(out.name)
     ggsave(out.name, width=7, height=4)    
 }
 
@@ -610,7 +617,8 @@ plot.cons.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
     geom_smooth(method="loess") +
          theme_classic() +
          theme(axis.text=element_text(size=15, colour="gray25"),
-              axis.title=element_text(size=20, colour="gray25"),
+               axis.title=element_text(size=20, colour="gray25"),
+               axis.title.y = element_text(angle=0),
               axis.line = element_blank(),              
               axis.ticks.length=unit(-0.25, "cm"),
               axis.ticks = element_line(colour = 'gray25'),
@@ -622,8 +630,8 @@ plot.cons.by.tau.gg <- function(df, xlab, ylab, out.name, report.dir) {
               axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))  +
         ylab(ylab) +
         xlab(xlab) +
-        base_breaks_y(seq(0, 1200, 100)) +
-        base_breaks_x(seq(0.006, 0.0240, 0.002))         
+        base_breaks_y(seq(0, 1200, 200)) +
+        base_breaks_x_interleave(seq(0.006, 0.0300, 0.002)) 
         
     print(paste0(report.dir, out.name))
     ggsave(paste0(report.dir, out.name), width=7, height=4)

@@ -12,14 +12,17 @@ do.exp2 <- FALSE
 do.exp3 <- TRUE
 
 difficulties <- seq(34, 48, 2)
-thresholds <- seq(24 * 10^4, 6 * 10 ^ 4, - 2 * 10^4)
+thresholds <- seq(30 * 10^4, 6 * 10 ^ 4, - 2 * 10^4)
 num.byz <- 0:12
 style <- "blockchain"
 nodes <- c(0, 6)
 
-dates.exp1 <- c("12-03-2018")
-dates.exp2 <- c("14-03-2018")
-dates.exp3.nonsecure <- c("15-04-2018") ## non-secure, Byz always 1.0
+## Old version
+##dates.exp1 <- c("12-03-2018")
+## New version will be c("20-04-2018")
+dates.exp1 <- c("20-04-2018")
+dates.exp2 <- c("14-03-2018", "17-04-2018", "18-04-2018")
+dates.exp3.nonsecure <- c("15-04-2018", "24-04-2018") ## non-secure, Byz always 1.0
 dates.exp3.secure <- c("16-04-2018") ## secure, Byz always 1.0
 
 MULTIPLIER <- 10^7 # Multiplier for converting int to float
@@ -29,8 +32,8 @@ report.dir <- "~/Dropbox/mypapers/ANTS2018/ants2018-git/img/" ## Folder images f
 N = 20
 
 ## Experiment 1 (Increasing difficulty)
-
-create.df.exp1 <- function(max.trials=50) {
+## Old versions (experiments from March)
+create.df.old.exp1 <- function(max.trials=50) {
     df <- data.frame()
     for (dat in dates.exp1) {
         for (i in 1:max.trials) {
@@ -62,6 +65,42 @@ create.df.exp1 <- function(max.trials=50) {
     return(df)    
 }
 
+
+## New verion (experiments from April, 20)
+create.df.exp1 <- function(max.trials=50) {
+    t <- 140000
+    df <- data.frame()
+    for (dat in dates.exp1) {
+        for (i in 1:max.trials) {
+            for (d in difficulties) {
+                for (node in nodes){
+
+                    trials.name <- sprintf("%s/experiment1-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
+
+                    if (file.exists(trials.name)) {
+                        X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
+                        if (nrow(X) != 0 && !is.null(X)){
+
+                            ## extract last row
+                            X <- X[nrow(X), ]                            
+                            X$difficulty = round(d / (100 - d), 2)
+                            X$actual = d / 100
+                            X$predicted = 1 - X$mean / MULTIPLIER
+                            if (nrow(df) == 0) {
+                                df <- X
+                            } else  {
+                                df <- rbind(df, X)
+                            }
+                        }
+                    }           
+                }
+            }
+        }
+    }
+    return(df)    
+}
+
+
 ## Experiment 2 (Varying threshold)
 create.df.exp2 <- function(max.trials=30) {
     d <- 40
@@ -71,7 +110,7 @@ create.df.exp2 <- function(max.trials=30) {
             for (t in thresholds) {
                 for (node in nodes){
 
-                    trials.name <- sprintf("%s/experiment1_decision2-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
+                    trials.name <- sprintf("%s/experiment2-node%d-%s/%d/num20_black%d_byz0_run%d-blockchain.RUN1", data.base, node, dat, t, d, i)
                     if (file.exists(trials.name)) {
                         X <- tryCatch(read.table(trials.name, header=T), error=function(e) NULL)
                         if (nrow(X) != 0 && !is.null(X)){
@@ -147,7 +186,7 @@ add.stats <- function(.df) {
 
 
 ###############
-## Experiment 2
+## Experiment 1
 ###############
 if (do.exp1) {
     print("Reading data of Experiment 1")
@@ -166,39 +205,46 @@ if (do.exp1) {
 
     source("myplothelpers.R")
     plot.error.gg(df,
-                  xlab=expression("Actual ("* rho['b']*")"),
-                  ylab=expression("Predicted ("* hat(rho)['b']*")"),
+                  xlab=expression(rho['b']),
+                  ylab=expression(bar(x)[symbol("\052")*","*infinity]),
                   sprintf("exp1_error.pdf"),
                   report.dir)  
 
     source("myplothelpers.R")
     plot.cons.gg(df,
-                 xlab=expression("Actual ("* rho['b']*")"),
-                 ylab=expression("Consensus Time"),
+                 xlab=expression(rho['b']),
+                 ylab=expression(T[N]),
                  sprintf("constime.pdf"),
                  report.dir)  
 
 
     source("myplothelpers.R")
-    plot.exit.prob.gg1(df.agg,
-                       xlab=expression("Actual ("* rho['b']*")"),
-                       ylab=expression("Exit probability"),
+    plot.exit.prob.gg2(df,
+                       xlab=expression(rho['b']),
+                       ylab=expression(E[N]),
                        sprintf("exitprob.pdf"),
                        report.dir)  
 
 
     source("myplothelpers.R")
     plot.abs.error.gg(df,
-                      xlab=expression("Actual ("* rho['b']*")"),
-                      ylab=expression("Mean Absolute Error"),
+                      xlab=expression(rho['b']),
+                      ylab=expression(MAE),
                       sprintf("absMeanError.pdf"),
-                      report.dir)  
+                      report.dir)
+
+    source("myplothelpers.R")
+    plot.MAE.by.rho.gg(df,
+                       xlab=expression(rho['b']),
+                       ylab=expression("MAE"),
+                       sprintf("MAE_rho.pdf"),
+                       report.dir)      
 
 
     source("myplothelpers.R")
     plot.blockchain.size.gg(df,
-                            xlab=expression("Actual ("* rho['b']*")"),
-                            ylab=expression("Blockchain size (MB)"),
+                            xlab=expression(rho['b']),
+                            ylab=expression(BC[MB]),
                             sprintf("blockchain_size.pdf"),
                             report.dir)  
 
@@ -221,38 +267,39 @@ if (do.exp2) {
     ## Experiment 2
     print("Creating plots for experiment 2")
 
+    source("myplothelpers.R")
     plot.blockchain.size.by.tau.gg(df2,
-                                   xlab=expression("Threshold ("*tau*")"),
-                                   ylab=expression("Blockchain size (MB)"),
+                                   xlab=expression(tau),
+                                   ylab=expression(BC[MB]),
                                    sprintf("blockchain_size_tau.pdf"),
                                    report.dir)  
 
 
 
     plot.error.by.tau.gg(df2,
-                         xlab=expression("Threshold ("*tau*")"),
+                         xlab=expression(tau),
                          ylab=expression("Error"),
                          sprintf("error_tau.pdf"),
                          report.dir)  
 
-
+    source("myplothelpers.R")
     plot.MAE.by.tau.gg(df2,
-                       xlab=expression("Threshold ("*tau*")"),
-                       ylab=expression("Mean absolute error"),
+                       xlab=expression(tau),
+                       ylab="MAE",
                        sprintf("MAE_tau.pdf"),
                        report.dir)  
 
 
     plot.MSE.by.tau.gg(df2,
-                       xlab=expression("Threshold ("*tau*")"),
-                       ylab=expression("Mean squared error"),
+                       xlab=expression(tau),
+                       ylab=expression("MSE"),
                        sprintf("MSE_tau.pdf"),
                        report.dir)  
 
-
+    source("myplothelpers.R")
     plot.cons.by.tau.gg(df2,
-                        xlab=expression("Threshold ("*tau*")"),
-                        ylab=expression("Consensus Time"),
+                        xlab=expression(tau),
+                        ylab=expression(T[N]),
                         sprintf("exp2-constime.pdf"),
                         report.dir)  
 
@@ -288,11 +335,12 @@ if (do.exp3) {
     write.csv(df3.nonsecure, f3.nonsecure, row.names = FALSE, quote=FALSE)
 
 
+    source("myplothelpers.R")
     ## Experiment 3 non-secure
     print("Creating plots for experiment 3 (non-secure)")
     plot.MAE.by.byz.gg(df3.nonsecure,
-                       xlab=expression("Number of Byzantine robots (k)"),
-                       ylab=expression("Mean absolute error"),
+                       xlab=expression(italic(k)),
+                       ylab="MAE",
                        sprintf("MAE_byz-nonsecure.pdf"),
                        report.dir) 
        
@@ -300,8 +348,8 @@ if (do.exp3) {
     ## Experiment 3 secure
     print("Creating plots for experiment 3 (secure)")
     plot.MAE.by.byz.gg(df3.secure,
-                       xlab=expression("Number of Byzantine robots (k)"),
-                       ylab=expression("Mean absolute error"),
+                       xlab=expression(italic(k)),
+                       ylab="MAE",
                        sprintf("MAE_byz-secure.pdf"),
                        report.dir) 
     
