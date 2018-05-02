@@ -7,8 +7,8 @@ V.Strobel, M. Dorigo. 2018. Blockchain technology for robot swarms: A
 shared knowledge and reputation management system for collective
 estimation.
 
-* Submitted to ANTS 2018 -- Eleventh International Conference on Swarm
-  Intelligence.
+*Submitted to ANTS 2018 -- Eleventh International Conference on Swarm
+  Intelligence.*
 
 A pre-print is available soon.  
 
