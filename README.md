@@ -6,7 +6,8 @@ V.Strobel, M. Dorigo. 2018. Blockchain technology for robot swarms: A shared kno
 
 *Submitted to ANTS 2018 -- Eleventh International Conference on Swarm Intelligence.*
 
-A pre-print is available soon.  
+A pre-print is available at:  
+http://iridia.ulb.ac.be/IridiaTrSeries/
 
 ## Abstract
 
